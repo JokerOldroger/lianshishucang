@@ -1,0 +1,5 @@
+node_modules/
+artifacts/
+cache/
+backend/.env
+.DS_Store

@@ -76,17 +76,16 @@ export default function InventoryPage() {
     [cardFilter, data.items, searchQuery, sortBy, statusFilter],
   );
 
-  const selectedItem = useMemo(
-    () => {
-      if (guidedCollectionId) {
-        const guidedItem = visibleItems.find((item) => item.collectionId === guidedCollectionId);
-        if (guidedItem) {
-          return guidedItem;
-        }
+  const selectedItem = useMemo(() => {
+    if (guidedCollectionId) {
+      const guidedItem = visibleItems.find((item) => item.collectionId === guidedCollectionId);
+      if (guidedItem) {
+        return guidedItem;
       }
+    }
 
-      return getPrimarySelection(visibleItems, selectedId);
-    }, [guidedCollectionId, selectedId, visibleItems]);
+    return getPrimarySelection(visibleItems, selectedId);
+  }, [guidedCollectionId, selectedId, visibleItems]);
 
   const market = useInventoryMarketData(token, selectedItem);
 
@@ -136,7 +135,7 @@ export default function InventoryPage() {
       <div className="relative z-20 mx-auto flex w-full max-w-[1700px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <div className="min-w-0 flex-1 space-y-6">
           <div className="flex items-center justify-between xl:hidden">
-            <div className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-100/80">
+            <div className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-100/80">
               {activeWorkspace === 'business' ? activeBusinessSection : activeWalletSection}
             </div>
             <button
@@ -149,23 +148,18 @@ export default function InventoryPage() {
           </div>
 
           {activeWorkspace === 'wallet' && activeWalletSection === 'access' ? (
-            <InventorySectionFrame
-              title="Access"
-              subtitle="JWT setup and live data controls."
-              rightAdornment={
-                <button
-                  type="button"
-                  onClick={clearToken}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:border-cyan-300/30 hover:text-white"
-                >
-                  Clear
-                </button>
-              }
-              contentClassName="space-y-4"
-            >
+            <InventorySectionFrame title="Access" rightAdornment={
+              <button
+                type="button"
+                onClick={clearToken}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:border-cyan-300/30 hover:text-white"
+              >
+                Clear
+              </button>
+            } contentClassName="space-y-4">
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_auto_auto] lg:items-end">
                 <label className="block">
-                  <span className="mb-2 block font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300/65">
+                  <span className="mb-2 block font-mono text-[12px] uppercase tracking-[0.26em] text-cyan-300/70 sm:text-[13px]">
                     JWT
                   </span>
                   <textarea
@@ -173,26 +167,26 @@ export default function InventoryPage() {
                     onChange={(event) => setTokenInput(event.target.value)}
                     placeholder="Paste Bearer JWT here"
                     rows={3}
-                    className="w-full rounded-2xl border border-cyan-400/15 bg-[#071523]/80 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45 focus:shadow-[0_0_0_1px_rgba(103,232,249,0.2)]"
+                    className="w-full rounded-2xl border border-cyan-400/15 bg-[#071523]/80 px-4 py-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45 focus:shadow-[0_0_0_1px_rgba(103,232,249,0.2)]"
                   />
                 </label>
                 <button
                   type="button"
                   onClick={() => setToken(tokenInput)}
-                  className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-sm font-medium text-cyan-100 transition hover:-translate-y-0.5 hover:shadow-[0_0_18px_rgba(34,211,238,0.18)]"
+                  className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-base font-medium text-cyan-100 transition hover:-translate-y-0.5 hover:shadow-[0_0_18px_rgba(34,211,238,0.18)]"
                 >
                   Save & Load
                 </button>
                 <button
                   type="button"
                   onClick={() => void refresh()}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
+                  className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-base font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
                 >
                   Sync
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-3 text-sm text-slate-300/75">
+              <div className="flex flex-wrap gap-3 text-base text-slate-300/75">
                 <span className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1">
                   Mode: {dataSource.toUpperCase()}
                 </span>
@@ -207,7 +201,7 @@ export default function InventoryPage() {
               </div>
 
               {error ? (
-                <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
+                <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-base text-rose-100">
                   {error}
                 </div>
               ) : null}
@@ -286,29 +280,25 @@ export default function InventoryPage() {
               ) : null}
 
               {guidedStage === 'mint' ? (
-                <InventorySectionFrame
-                  title="Mint Stage"
-                  subtitle="Your guided flow has reached mint preparation. Review the generated token URI and continue from the NFT Prep workspace if needed."
-                  contentClassName="space-y-4"
-                >
+                <InventorySectionFrame title="Mint Stage" contentClassName="space-y-4">
                   <div className="rounded-[1.35rem] border border-cyan-400/12 bg-[#08131f]/75 p-4">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-300/60">Token URI</p>
-                    <p className="mt-3 break-all text-sm font-medium text-white">{conversionState.tokenUri ?? '—'}</p>
+                    <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-cyan-300/65 sm:text-[13px]">Token URI</p>
+                    <p className="mt-3 break-all text-lg font-medium text-white">{conversionState.tokenUri ?? '—'}</p>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
                       onClick={() => conversionState.tokenUri && void viewTokenUriForItem(conversionState.tokenUri)}
-                      className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:-translate-y-0.5"
+                      className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-base font-medium text-cyan-100 transition hover:-translate-y-0.5"
                     >
                       View Token URI
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveBusinessSection('prep')}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
+                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
                     >
-                      Open NFT Prep Workspace
+                      Open NFT Prep
                     </button>
                   </div>
                 </InventorySectionFrame>

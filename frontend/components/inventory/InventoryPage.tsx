@@ -1,0 +1,371 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { Menu } from 'lucide-react';
+import InventoryHeader from './InventoryHeader';
+import InventoryToolbar from './InventoryToolbar';
+import InventoryGrid from './InventoryGrid';
+import InventoryDetailPanel from './InventoryDetailPanel';
+import InventoryTelemetryPanel from './InventoryTelemetryPanel';
+import InventoryStatsSummary from './InventoryStatsSummary';
+import InventoryTradingMarketPanel from './InventoryTradingMarketPanel';
+import InventorySideRail from './InventorySideRail';
+import InventorySideRailDrawer from './InventorySideRailDrawer';
+import InventoryBottomNav from './InventoryBottomNav';
+import InventoryUploadPanel from './InventoryUploadPanel';
+import InventoryMintPrepPanel from './InventoryMintPrepPanel';
+import InventoryCollectionEditor from './InventoryCollectionEditor';
+import { filterAndSortInventoryItems, getPrimarySelection } from '../../lib/inventory/selectors';
+import { useInventoryData } from '../../lib/inventory/useInventoryData';
+import { useInventoryMarketData } from '../../lib/inventory/useInventoryMarketData';
+import type {
+  InventoryCardFilterStatus,
+  InventoryFilterStatus,
+  InventorySortBy,
+} from '../../types/inventory';
+import InventorySectionFrame from './InventorySectionFrame';
+
+export default function InventoryPage() {
+  const {
+    data,
+    loading,
+    error,
+    token,
+    dataSource,
+    notice,
+    actionState,
+    conversionState,
+    guidedStage,
+    guidedCollectionId,
+    setGuidedStage,
+    setToken,
+    clearToken,
+    refresh,
+    generateCardForItem,
+    prepareMintForItem,
+    viewTokenUriForItem,
+    uploadCollection,
+    oneClickConvert,
+    saveCollectionMetadata,
+  } = useInventoryData();
+
+  const [activeWorkspace, setActiveWorkspace] = useState<'wallet' | 'business'>('business');
+  const [activeBusinessSection, setActiveBusinessSection] = useState<'library' | 'upload' | 'prep' | 'market' | 'storage'>('library');
+  const [activeWalletSection, setActiveWalletSection] = useState<'access'>('access');
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [tokenInput, setTokenInput] = useState(token);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<InventoryFilterStatus>('all');
+  const [cardFilter, setCardFilter] = useState<InventoryCardFilterStatus>('all');
+  const [sortBy, setSortBy] = useState<InventorySortBy>('updated_desc');
+  const [selectedId, setSelectedId] = useState<string | undefined>(data.items[0]?.id);
+
+  useEffect(() => {
+    setTokenInput(token);
+  }, [token]);
+
+  const visibleItems = useMemo(
+    () =>
+      filterAndSortInventoryItems(data.items, {
+        searchQuery,
+        statusFilter,
+        cardFilter,
+        sortBy,
+      }),
+    [cardFilter, data.items, searchQuery, sortBy, statusFilter],
+  );
+
+  const selectedItem = useMemo(
+    () => {
+      if (guidedCollectionId) {
+        const guidedItem = visibleItems.find((item) => item.collectionId === guidedCollectionId);
+        if (guidedItem) {
+          return guidedItem;
+        }
+      }
+
+      return getPrimarySelection(visibleItems, selectedId);
+    }, [guidedCollectionId, selectedId, visibleItems]);
+
+  const market = useInventoryMarketData(token, selectedItem);
+
+  useEffect(() => {
+    if (!visibleItems.length) {
+      setSelectedId(undefined);
+      return;
+    }
+
+    if (guidedCollectionId) {
+      const guidedItem = visibleItems.find((item) => item.collectionId === guidedCollectionId);
+      if (guidedItem) {
+        setSelectedId(guidedItem.id);
+        return;
+      }
+    }
+
+    if (!selectedId || !visibleItems.some((item) => item.id === selectedId)) {
+      setSelectedId(visibleItems[0]?.id);
+    }
+  }, [guidedCollectionId, selectedId, visibleItems]);
+
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-[#121528] pb-28 text-white xl:pb-10">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(255,255,255,0.9),transparent_14%),radial-gradient(circle_at_34%_38%,rgba(125,211,252,0.72),transparent_18%),radial-gradient(circle_at_58%_18%,rgba(253,224,71,0.46),transparent_18%),radial-gradient(circle_at_84%_22%,rgba(244,114,182,0.62),transparent_20%),radial-gradient(circle_at_82%_74%,rgba(216,180,254,0.7),transparent_22%),radial-gradient(circle_at_18%_80%,rgba(103,232,249,0.52),transparent_20%),linear-gradient(135deg,rgba(248,239,255,0.98),rgba(234,253,255,0.96)_20%,rgba(251,244,205,0.88)_42%,rgba(252,214,236,0.92)_68%,rgba(228,217,255,0.96))]" />
+      <div className="pointer-events-none fixed inset-0 opacity-60 [background-image:radial-gradient(circle_at_18%_32%,rgba(255,255,255,0.34)_0,transparent_12%),radial-gradient(circle_at_72%_18%,rgba(255,255,255,0.26)_0,transparent_14%),radial-gradient(circle_at_64%_74%,rgba(226,232,240,0.18)_0,transparent_18%),repeating-linear-gradient(112deg,rgba(255,255,255,0.1)_0,rgba(255,255,255,0.1)_2px,transparent_2px,transparent_20px),repeating-linear-gradient(24deg,rgba(255,255,255,0.06)_0,rgba(255,255,255,0.06)_1px,transparent_1px,transparent_14px),linear-gradient(110deg,transparent_0%,rgba(255,255,255,0.16)_32%,transparent_42%,rgba(255,255,255,0.12)_54%,transparent_66%,rgba(255,255,255,0.1)_78%,transparent_100%)]" />
+      <div className="pointer-events-none fixed inset-0 opacity-40 blur-[68px] bg-[radial-gradient(circle_at_24%_28%,rgba(255,255,255,0.42),transparent_26%),radial-gradient(circle_at_70%_24%,rgba(244,114,182,0.26),transparent_26%),radial-gradient(circle_at_52%_66%,rgba(34,211,238,0.24),transparent_28%),radial-gradient(circle_at_82%_70%,rgba(196,181,253,0.24),transparent_26%)]" />
+      <div className="pointer-events-none fixed inset-0 opacity-22 bg-[linear-gradient(125deg,transparent_0%,rgba(255,255,255,0.24)_26%,transparent_34%,rgba(255,255,255,0.14)_48%,transparent_58%,rgba(255,255,255,0.18)_74%,transparent_100%)] mix-blend-screen" />
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(8,14,32,0.3),rgba(9,18,38,0.42)_34%,rgba(8,16,34,0.62)_68%,rgba(7,13,28,0.78)_100%)]" />
+      <div className="pointer-events-none fixed inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(8,145,178,0.36)_1px,transparent_1px),linear-gradient(90deg,rgba(8,145,178,0.36)_1px,transparent_1px)] [background-size:132px_132px] [mask-image:linear-gradient(180deg,white,transparent)]" />
+
+      <InventorySideRailDrawer
+        open={drawerOpen}
+        workspace={activeWorkspace}
+        activeSection={activeWorkspace === 'business' ? activeBusinessSection : activeWalletSection}
+        onChange={(section) => {
+          if (activeWorkspace === 'business' && section !== 'access') {
+            setActiveBusinessSection(section);
+          }
+          if (activeWorkspace === 'wallet' && section === 'access') {
+            setActiveWalletSection('access');
+          }
+        }}
+        onClose={() => setDrawerOpen(false)}
+      />
+
+      <div className="relative z-20 mx-auto flex w-full max-w-[1700px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+        <div className="min-w-0 flex-1 space-y-6">
+          <div className="flex items-center justify-between xl:hidden">
+            <div className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-100/80">
+              {activeWorkspace === 'business' ? activeBusinessSection : activeWalletSection}
+            </div>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="rounded-full border border-white/10 bg-[#06111c]/85 p-3 text-slate-300 transition hover:border-cyan-300/20 hover:text-white"
+            >
+              <Menu size={18} />
+            </button>
+          </div>
+
+          {activeWorkspace === 'wallet' && activeWalletSection === 'access' ? (
+            <InventorySectionFrame
+              title="Access"
+              subtitle="JWT setup and live data controls."
+              rightAdornment={
+                <button
+                  type="button"
+                  onClick={clearToken}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:border-cyan-300/30 hover:text-white"
+                >
+                  Clear
+                </button>
+              }
+              contentClassName="space-y-4"
+            >
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_auto_auto] lg:items-end">
+                <label className="block">
+                  <span className="mb-2 block font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300/65">
+                    JWT
+                  </span>
+                  <textarea
+                    value={tokenInput}
+                    onChange={(event) => setTokenInput(event.target.value)}
+                    placeholder="Paste Bearer JWT here"
+                    rows={3}
+                    className="w-full rounded-2xl border border-cyan-400/15 bg-[#071523]/80 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45 focus:shadow-[0_0_0_1px_rgba(103,232,249,0.2)]"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setToken(tokenInput)}
+                  className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-sm font-medium text-cyan-100 transition hover:-translate-y-0.5 hover:shadow-[0_0_18px_rgba(34,211,238,0.18)]"
+                >
+                  Save & Load
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
+                >
+                  Sync
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-3 text-sm text-slate-300/75">
+                <span className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1">
+                  Mode: {dataSource.toUpperCase()}
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                  Token: {token ? 'Loaded' : 'Demo only'}
+                </span>
+                {loading ? (
+                  <span className="rounded-full border border-yellow-300/15 bg-yellow-300/8 px-3 py-1 text-yellow-100">
+                    Syncing…
+                  </span>
+                ) : null}
+              </div>
+
+              {error ? (
+                <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
+                  {error}
+                </div>
+              ) : null}
+            </InventorySectionFrame>
+          ) : null}
+
+          {activeWorkspace === 'business' && activeBusinessSection === 'library' ? (
+            <div className="space-y-6">
+              <InventoryHeader selectedItem={selectedItem} dataSource={dataSource} />
+              <InventoryStatsSummary stats={data.stats} />
+
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(360px,0.9fr)]">
+                <div className="space-y-6">
+                  <InventoryToolbar
+                    searchQuery={searchQuery}
+                    statusFilter={statusFilter}
+                    cardFilter={cardFilter}
+                    sortBy={sortBy}
+                    resultCount={visibleItems.length}
+                    onSearchQueryChange={setSearchQuery}
+                    onStatusFilterChange={setStatusFilter}
+                    onCardFilterChange={setCardFilter}
+                    onSortByChange={setSortBy}
+                  />
+                  <InventoryGrid
+                    items={visibleItems}
+                    selectedId={selectedItem?.id}
+                    onSelect={setSelectedId}
+                  />
+                </div>
+
+                <div className="space-y-6">
+                  <InventoryDetailPanel item={selectedItem} />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {activeWorkspace === 'business' && activeBusinessSection === 'upload' ? (
+            <div className="space-y-6">
+              <InventoryUploadPanel
+                token={token}
+                selectedItem={selectedItem}
+                conversionState={conversionState}
+                notice={notice}
+                onUpload={uploadCollection}
+                onOneClickConvert={oneClickConvert}
+                guidedStage={guidedStage}
+                onGuidedStageChange={setGuidedStage}
+              />
+
+              {guidedStage === 'review' ? (
+                <InventoryCollectionEditor
+                  selectedItem={selectedItem}
+                  notice={notice}
+                  onSubmit={(payload) =>
+                    selectedItem ? saveCollectionMetadata(selectedItem.collectionId, payload) : Promise.resolve()
+                  }
+                  onBack={() => setGuidedStage('upload')}
+                  onContinue={() => setGuidedStage('card')}
+                  submitting={actionState?.kind === 'refresh'}
+                />
+              ) : null}
+
+              {guidedStage === 'card' ? (
+                <InventoryMintPrepPanel
+                  selectedItem={selectedItem}
+                  onRefresh={() => void refresh()}
+                  onGenerateCard={(collectionId) => void generateCardForItem(collectionId)}
+                  onPrepareMint={(collectionId) => void prepareMintForItem(collectionId)}
+                  onViewTokenUri={(tokenUri) => void viewTokenUriForItem(tokenUri)}
+                  actionState={actionState}
+                  notice={notice}
+                  dataSource={dataSource}
+                />
+              ) : null}
+
+              {guidedStage === 'mint' ? (
+                <InventorySectionFrame
+                  title="Mint Stage"
+                  subtitle="Your guided flow has reached mint preparation. Review the generated token URI and continue from the NFT Prep workspace if needed."
+                  contentClassName="space-y-4"
+                >
+                  <div className="rounded-[1.35rem] border border-cyan-400/12 bg-[#08131f]/75 p-4">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-300/60">Token URI</p>
+                    <p className="mt-3 break-all text-sm font-medium text-white">{conversionState.tokenUri ?? '—'}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => conversionState.tokenUri && void viewTokenUriForItem(conversionState.tokenUri)}
+                      className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:-translate-y-0.5"
+                    >
+                      View Token URI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveBusinessSection('prep')}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
+                    >
+                      Open NFT Prep Workspace
+                    </button>
+                  </div>
+                </InventorySectionFrame>
+              ) : null}
+            </div>
+          ) : null}
+
+          {activeWorkspace === 'business' && activeBusinessSection === 'prep' ? (
+            <InventoryMintPrepPanel
+              selectedItem={selectedItem}
+              onRefresh={() => void refresh()}
+              onGenerateCard={(collectionId) => void generateCardForItem(collectionId)}
+              onPrepareMint={(collectionId) => void prepareMintForItem(collectionId)}
+              onViewTokenUri={(tokenUri) => void viewTokenUriForItem(tokenUri)}
+              actionState={actionState}
+              notice={notice}
+              dataSource={dataSource}
+            />
+          ) : null}
+
+          {activeWorkspace === 'business' && activeBusinessSection === 'market' ? (
+            <InventoryTradingMarketPanel
+              market={market.market}
+              loading={market.loading}
+              error={market.error}
+              selectedItem={selectedItem}
+            />
+          ) : null}
+
+          {activeWorkspace === 'business' && activeBusinessSection === 'storage' ? (
+            <InventoryTelemetryPanel
+              item={selectedItem}
+              cabinets={data.cabinets}
+              telemetry={data.telemetry}
+              diagnostics={data.diagnostics}
+              dataSource={dataSource}
+            />
+          ) : null}
+        </div>
+
+        <InventorySideRail
+          workspace={activeWorkspace}
+          activeSection={activeWorkspace === 'business' ? activeBusinessSection : activeWalletSection}
+          onChange={(section) => {
+            if (activeWorkspace === 'business' && section !== 'access') {
+              setActiveBusinessSection(section);
+            }
+            if (activeWorkspace === 'wallet' && section === 'access') {
+              setActiveWalletSection('access');
+            }
+          }}
+          collapsed={railCollapsed}
+          onToggle={() => setRailCollapsed((value) => !value)}
+        />
+      </div>
+
+      <InventoryBottomNav activeTab={activeWorkspace} onChange={setActiveWorkspace} />
+    </div>
+  );
+}

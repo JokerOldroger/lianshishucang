@@ -2,4 +2,9 @@ node_modules/
 artifacts/
 cache/
 backend/.env
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+frontend/.env.*
 .DS_Store

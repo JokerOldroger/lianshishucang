@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/lianshishucang/backend/config"
 	"github.com/lianshishucang/backend/middleware"
@@ -38,8 +39,17 @@ func main() {
 		}
 	}
 
+	if err := os.MkdirAll(cfg.UploadDir, 0o755); err != nil {
+		log.Fatalf("Failed to create upload directory: %v", err)
+	}
+	if err := os.MkdirAll(cfg.CardOutputDir, 0o755); err != nil {
+		log.Fatalf("Failed to create card output directory: %v", err)
+	}
+
 	r := gin.Default()
 	r.Use(middleware.CORS())
+	r.Static("/uploads", cfg.UploadDir)
+	r.Static("/cards", cfg.CardOutputDir)
 
 	routes.RegisterRoutes(r, db, cfg)
 

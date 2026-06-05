@@ -188,11 +188,11 @@ func (l *EventListener) processRange(ctx context.Context, from, to uint64) {
 	}
 	if l.cfg.AuctionContract != "" {
 		l.processContractEvents(ctx, l.auctionAddr, from, to, map[string]string{
-			"AuctionCreated":  "AuctionCreated",
-			"BidPlaced":       "BidPlaced",
-			"AuctionEnded":    "AuctionEnded",
+			"AuctionCreated":   "AuctionCreated",
+			"BidPlaced":        "BidPlaced",
+			"AuctionEnded":     "AuctionEnded",
 			"AuctionCancelled": "AuctionCancelled",
-			"AuctionSettled":  "AuctionSettled",
+			"AuctionSettled":   "AuctionSettled",
 		})
 	}
 }
@@ -339,6 +339,21 @@ func (l *EventListener) handleNFTMinted(vLog types.Log) {
 		log.Printf("[event_listener] create NFT error: %v", err)
 		return
 	}
+	if uri != "" {
+		updates := map[string]interface{}{
+			"nft_id":    nft.ID,
+			"status":    models.PhysicalCollectionStatusMinted,
+			"token_uri": uri,
+		}
+		if meta.ID != 0 {
+			updates["metadata_id"] = meta.ID
+		}
+		if err := l.db.Model(&models.PhysicalCollection{}).
+			Where("token_uri = ? OR metadata_id = ?", uri, meta.ID).
+			Updates(updates).Error; err != nil {
+			log.Printf("[event_listener] update PhysicalCollection after mint error: %v", err)
+		}
+	}
 	log.Printf("[event_listener] NFTMinted: tokenID=%d tx=%s", tokenID, vLog.TxHash.Hex())
 	l.logActivity(&nft.ID, creatorUser.ID, "mint", "tokenID: "+strconv.FormatUint(tokenID, 10), vLog.TxHash.Hex())
 }
@@ -403,16 +418,35 @@ func (l *EventListener) handleItemSold(vLog types.Log) {
 		}
 	}
 
-	buyer, _ := l.findOrCreateUser(buyerAddr)
+	buyer, err := l.findOrCreateUser(buyerAddr)
+	if err != nil {
+		log.Printf("[event_listener] findOrCreateUser buyer error: %v", err)
+		return
+	}
 
 	var nft models.NFT
 	if err := l.db.Where("token_id = ? AND contract_address = ?", tokenID, l.cfg.NFTContract).First(&nft).Error; err != nil {
 		return
 	}
 
-	l.db.Transaction(func(tx *gorm.DB) error {
-		tx.Model(&models.Listing{}).Where("listing_id = ?", listingID).Update("status", "sold")
-		tx.Model(&models.NFT{}).Where("id = ?", nft.ID).Update("owner_id", buyer.ID)
+	err = l.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Listing{}).Where("listing_id = ?", listingID).Update("status", "sold").Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.NFT{}).Where("id = ?", nft.ID).Update("owner_id", buyer.ID).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.PhysicalCollection{}).Where("nft_id = ?", nft.ID).Updates(map[string]interface{}{
+			"user_id": buyer.ID,
+		}).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.StorageInventoryItem{}).Where("physical_collection_id IN (?)", tx.Model(&models.PhysicalCollection{}).Select("id").Where("nft_id = ?", nft.ID)).Updates(map[string]interface{}{
+			"user_id":          buyer.ID,
+			"inventory_status": "PENDING_DELIVERY_INSTRUCTION",
+		}).Error; err != nil {
+			return err
+		}
 		txLog := &models.Transaction{
 			TxHash: vLog.TxHash.Hex(),
 			FromID: nft.OwnerID,
@@ -424,6 +458,10 @@ func (l *EventListener) handleItemSold(vLog types.Log) {
 		}
 		return tx.Create(txLog).Error
 	})
+	if err != nil {
+		log.Printf("[event_listener] ItemSold transaction error: %v", err)
+		return
+	}
 	log.Printf("[event_listener] ItemSold: listingID=%d tokenID=%d buyer=%s", listingID, tokenID, buyerAddr.Hex())
 	l.logActivity(&nft.ID, buyer.ID, "purchase", "price: "+price+" wei", vLog.TxHash.Hex())
 }
@@ -544,10 +582,10 @@ func (l *EventListener) handleAuctionSettled(vLog types.Log) {
 
 func (l *EventListener) logActivity(nftID *uint, userID uint, action, detail, txHash string) {
 	l.db.Create(&models.Activity{
-		NFTID:   nftID,
-		UserID:  userID,
-		Action:  action,
-		Detail:  detail,
-		TxHash:  txHash,
+		NFTID:  nftID,
+		UserID: userID,
+		Action: action,
+		Detail: detail,
+		TxHash: txHash,
 	})
 }

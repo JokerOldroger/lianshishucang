@@ -7,6 +7,7 @@ import type {
   InventoryDataSource,
   InventoryItemViewModel,
 } from '../../types/inventory';
+import type { WalletState } from '../../lib/web3/useWallet';
 
 interface InventoryMintPrepPanelProps {
   selectedItem?: InventoryItemViewModel;
@@ -14,12 +15,14 @@ interface InventoryMintPrepPanelProps {
   onGenerateCard: (collectionId: number) => void;
   onPrepareMint: (collectionId: number) => void;
   onViewTokenUri: (tokenUri?: string) => void;
+  onMintNFT?: () => Promise<void>;
   actionState?: {
     kind: InventoryActionKind;
     collectionId?: number;
   } | null;
   notice?: InventoryActionNotice | null;
   dataSource: InventoryDataSource;
+  wallet?: WalletState;
 }
 
 export default function InventoryMintPrepPanel(props: InventoryMintPrepPanelProps) {

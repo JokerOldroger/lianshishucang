@@ -16,7 +16,23 @@ export type InventoryActionKind =
   | 'prepare_mint'
   | 'view_token_uri'
   | 'upload_collection'
-  | 'one_click_convert';
+  | 'one_click_convert'
+  | 'mint_nft'
+  | 'buy_item'
+  | 'cancel_listing'
+  | 'create_listing'
+  | 'update_price'
+  | 'place_bid'
+  | 'end_auction'
+  | 'settle_auction'
+  | 'cancel_auction'
+  | 'claim_refund'
+  | 'approve_nft'
+  | 'approve_all'
+  | 'create_offer'
+  | 'cancel_offer'
+  | 'accept_offer'
+  | 'create_auction';
 export type InventoryNoticeTone = 'info' | 'success' | 'error';
 
 export type InventoryFilterStatus = 'all' | InventoryLifecycleStatus;
@@ -308,6 +324,7 @@ export interface InventoryMarketListingViewModel {
   id: string;
   listingId: string;
   nftId?: number;
+  nftContract?: string;
   title: string;
   imageUrl: string;
   sellerLabel: string;
@@ -355,6 +372,21 @@ export interface InventoryMarketSummary {
   createdNfts: number;
   selectedItemListed: boolean;
   selectedItemInAuction: boolean;
+}
+
+export interface InventoryMarketOfferViewModel {
+  id: string;
+  offerId: string;
+  tokenId: number;
+  nftContract: string;
+  bidder: string;
+  bidderLabel: string;
+  priceWei: string;
+  priceEthLabel: string;
+  expiration: number;
+  active: boolean;
+  createdAt: number;
+  isExpired: boolean;
 }
 
 export interface InventoryMarketData {

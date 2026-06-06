@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Menu } from 'lucide-react';
 import InventoryHeader from './InventoryHeader';
 import InventoryToolbar from './InventoryToolbar';
@@ -15,10 +15,14 @@ import InventoryBottomNav from './InventoryBottomNav';
 import InventoryUploadPanel from './InventoryUploadPanel';
 import InventoryMintPrepPanel from './InventoryMintPrepPanel';
 import InventoryCollectionEditor from './InventoryCollectionEditor';
+import InventoryWalletPanel from './InventoryWalletPanel';
 import { filterAndSortInventoryItems, getPrimarySelection } from '../../lib/inventory/selectors';
 import { useInventoryData } from '../../lib/inventory/useInventoryData';
 import { useInventoryMarketData } from '../../lib/inventory/useInventoryMarketData';
+import { useWallet } from '../../lib/web3/useWallet';
+import { useContractWrite } from '../../lib/web3/useContractWrite';
 import type {
+  InventoryActionKind,
   InventoryCardFilterStatus,
   InventoryFilterStatus,
   InventorySortBy,
@@ -88,6 +92,31 @@ export default function InventoryPage() {
   }, [guidedCollectionId, selectedId, visibleItems]);
 
   const market = useInventoryMarketData(token, selectedItem);
+  const wallet = useWallet();
+  const contractWrite = useContractWrite();
+  const [mintNotice, setMintNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
+
+  const handleMintNFT = useCallback(async () => {
+    if (!selectedItem?.tokenUri || !wallet.address) {
+      return;
+    }
+    setMintNotice({ tone: 'info', message: 'Minting NFT on-chain…' });
+    try {
+      const hash = await contractWrite.mintNFT(
+        wallet.address,
+        selectedItem.tokenUri,
+        selectedItem.royaltyFee ?? 250,
+      );
+      setMintNotice({ tone: 'success', message: `NFT minted! Tx: ${hash.slice(0, 10)}…` });
+      setGuidedStage('mint');
+      await refresh();
+    } catch (err: unknown) {
+      setMintNotice({
+        tone: 'error',
+        message: err instanceof Error ? err.message : 'Mint failed',
+      });
+    }
+  }, [selectedItem, wallet.address, contractWrite, refresh]);
 
   useEffect(() => {
     if (!visibleItems.length) {
@@ -205,6 +234,8 @@ export default function InventoryPage() {
                   {error}
                 </div>
               ) : null}
+
+              <InventoryWalletPanel wallet={wallet} />
             </InventorySectionFrame>
           ) : null}
 
@@ -273,9 +304,11 @@ export default function InventoryPage() {
                   onGenerateCard={(collectionId) => void generateCardForItem(collectionId)}
                   onPrepareMint={(collectionId) => void prepareMintForItem(collectionId)}
                   onViewTokenUri={(tokenUri) => void viewTokenUriForItem(tokenUri)}
+                  onMintNFT={handleMintNFT}
                   actionState={actionState}
                   notice={notice}
                   dataSource={dataSource}
+                  wallet={wallet}
                 />
               ) : null}
 
@@ -313,9 +346,11 @@ export default function InventoryPage() {
               onGenerateCard={(collectionId) => void generateCardForItem(collectionId)}
               onPrepareMint={(collectionId) => void prepareMintForItem(collectionId)}
               onViewTokenUri={(tokenUri) => void viewTokenUriForItem(tokenUri)}
+              onMintNFT={handleMintNFT}
               actionState={actionState}
               notice={notice}
               dataSource={dataSource}
+              wallet={wallet}
             />
           ) : null}
 

@@ -12,6 +12,7 @@ interface InventoryItemActionsProps {
   onGenerateCard: (collectionId: number) => void;
   onPrepareMint: (collectionId: number) => void;
   onViewTokenUri: (tokenUri?: string) => void;
+  onMintNFT?: () => Promise<void>;
   actionState?: {
     kind: InventoryActionKind;
     collectionId?: number;
@@ -26,6 +27,7 @@ export default function InventoryItemActions({
   onGenerateCard,
   onPrepareMint,
   onViewTokenUri,
+  onMintNFT,
   actionState,
   notice,
   dataSource,
@@ -65,6 +67,20 @@ export default function InventoryItemActions({
         !actionState,
       accent: 'yellow',
       onClick: () => selectedItem && onPrepareMint(selectedItem.collectionId),
+    },
+    {
+      label:
+        actionState?.kind === 'mint_nft' && isSelectedActionRunning
+          ? 'Minting On-chain…'
+          : 'Mint NFT',
+      enabled:
+        Boolean(selectedItem?.hasMintPrep) &&
+        Boolean(selectedItem?.tokenUri) &&
+        selectedItem?.status !== 'minted' &&
+        selectedItem?.status !== 'shipped' &&
+        !actionState,
+      accent: 'green',
+      onClick: () => onMintNFT?.(),
     },
     {
       label: 'View Token URI',
@@ -151,7 +167,9 @@ export default function InventoryItemActions({
               ? 'border-yellow-300/25 bg-yellow-300/8 text-yellow-100'
               : action.accent === 'purple'
                 ? 'border-fuchsia-300/20 bg-fuchsia-300/8 text-fuchsia-100'
-                : 'border-cyan-300/20 bg-cyan-300/8 text-cyan-100';
+                : action.accent === 'green'
+                  ? 'border-emerald-300/25 bg-emerald-300/8 text-emerald-100'
+                  : 'border-cyan-300/20 bg-cyan-300/8 text-cyan-100';
 
           return (
             <button

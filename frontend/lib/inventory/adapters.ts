@@ -215,6 +215,7 @@ export function adaptListingToMarketListingViewModel(
     id: String(listing.id),
     listingId: String(listing.listing_id ?? listing.id),
     nftId: listing.nft_id ?? listing.nft?.id,
+    nftContract: listing.nft?.contract_address || undefined,
     title: listing.nft?.name?.trim() || 'Untitled Listing',
     imageUrl: resolveTradingImage(listing.nft?.image),
     sellerLabel: formatWalletLabel(listing.seller),

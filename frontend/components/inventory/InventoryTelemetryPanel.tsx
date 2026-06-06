@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type {
   InventoryCabinetViewModel,
   InventoryDiagnosticViewModel,
@@ -21,6 +22,7 @@ export default function InventoryTelemetryPanel({
   diagnostics,
   dataSource,
 }: InventoryTelemetryPanelProps) {
+  const { t } = useTranslation();
   const cabinetCode = item?.physicalLocation ? deriveCabinetCode(item.physicalLocation) : undefined;
   const cabinet =
     cabinets?.find((entry) => entry.cabinetCode === cabinetCode) ??
@@ -32,7 +34,7 @@ export default function InventoryTelemetryPanel({
 
   return (
     <InventorySectionFrame
-      title="Vault Telemetry"
+      title={t('telemetry.title')}
       rightAdornment={
         <span className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-100/80">
           {dataSource.toUpperCase()}
@@ -41,38 +43,38 @@ export default function InventoryTelemetryPanel({
       contentClassName="space-y-5"
     >
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-        <Metric label="Cabinet" value={cabinet?.cabinetCode ?? 'Unavailable'} tone="cyan" />
-        <Metric label="Cabinet Status" value={cabinet?.status ?? 'Not Connected'} tone="green" />
+        <Metric label={t('telemetry.cabinet')} value={cabinet?.cabinetCode ?? t('common.unavailable')} tone="cyan" />
+        <Metric label={t('telemetry.cabinetStatus')} value={cabinet?.status ?? t('telemetry.notConnected')} tone="green" />
         <Metric
-          label="Cabinet Temp"
-          value={liveTelemetry ? `${liveTelemetry.currentTemp.toFixed(1)}°C` : cabinet ? `${cabinet.targetTemp.toFixed(1)}°C target` : '—'}
+          label={t('telemetry.cabinetTemp')}
+          value={liveTelemetry ? `${liveTelemetry.currentTemp.toFixed(1)}°C` : cabinet ? `${cabinet.targetTemp.toFixed(1)}°C ${t('telemetry.target')}` : '—'}
           tone="yellow"
         />
         <Metric
-          label="Cabinet Humidity"
-          value={liveTelemetry ? `${liveTelemetry.currentHumidity.toFixed(0)}%` : cabinet ? `${cabinet.targetHumidity.toFixed(0)}% target` : '—'}
+          label={t('telemetry.cabinetHumidity')}
+          value={liveTelemetry ? `${liveTelemetry.currentHumidity.toFixed(0)}%` : cabinet ? `${cabinet.targetHumidity.toFixed(0)}% ${t('telemetry.target')}` : '—'}
           tone="cyan"
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <SystemFlag label="TEC Cooling" active={Boolean(cabinet?.tecCoolingActive)} />
-        <SystemFlag label="Atomizer" active={Boolean(cabinet?.atomizerActive)} />
+        <SystemFlag label={t('telemetry.tecCooling')} active={Boolean(cabinet?.tecCoolingActive)} />
+        <SystemFlag label={t('telemetry.atomizer')} active={Boolean(cabinet?.atomizerActive)} />
       </div>
 
       <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
         <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-          Target Environment
+          {t('telemetry.targetEnvironment')}
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-base text-slate-200">
           <span className="rounded-full border border-cyan-400/15 bg-cyan-400/5 px-3 py-2">
-            Temp Target: {cabinet ? `${cabinet.targetTemp.toFixed(1)}°C` : '—'}
+            {t('telemetry.tempTarget')} {cabinet ? `${cabinet.targetTemp.toFixed(1)}°C` : '—'}
           </span>
           <span className="rounded-full border border-cyan-400/15 bg-cyan-400/5 px-3 py-2">
-            Humidity Target: {cabinet ? `${cabinet.targetHumidity.toFixed(0)}%` : '—'}
+            {t('telemetry.humidityTarget')} {cabinet ? `${cabinet.targetHumidity.toFixed(0)}%` : '—'}
           </span>
           <span className="rounded-full border border-cyan-400/15 bg-cyan-400/5 px-3 py-2">
-            Stored Units: {cabinet?.itemCount ?? 0}
+            {t('telemetry.storedUnits')} {cabinet?.itemCount ?? 0}
           </span>
         </div>
       </div>
@@ -80,14 +82,14 @@ export default function InventoryTelemetryPanel({
       <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
         <div className="flex items-center justify-between gap-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-            Diagnostic Advisory
+            {t('telemetry.diagnosticAdvisory')}
           </p>
           <span className="rounded-full border border-yellow-300/20 bg-yellow-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-yellow-100">
-            {diagnostic?.riskLevel ?? 'LIMITED'}
+            {diagnostic?.riskLevel ?? t('telemetry.limited')}
           </span>
         </div>
         <p className="mt-4 text-base leading-7 text-slate-300/80">
-          {diagnostic?.humanAdvice ?? 'No persistent diagnostic history endpoint exists yet.'}
+          {diagnostic?.humanAdvice ?? t('telemetry.noDiagnosticHistory')}
         </p>
       </div>
     </InventorySectionFrame>
@@ -124,6 +126,7 @@ interface SystemFlagProps {
 }
 
 function SystemFlag({ label, active }: SystemFlagProps) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-[1.35rem] border border-white/8 bg-[#07121c]/75 p-4">
       <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/60">{label}</p>
@@ -135,7 +138,7 @@ function SystemFlag({ label, active }: SystemFlagProps) {
           ].join(' ')}
         />
         <span className={active ? 'text-base text-emerald-100' : 'text-base text-slate-400'}>
-          {active ? 'Active' : 'Standby'}
+          {active ? t('telemetry.active') : t('telemetry.standby')}
         </span>
       </div>
     </div>

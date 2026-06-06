@@ -1,18 +1,19 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import type { InventoryStats } from '../../types/inventory';
 
 interface InventoryStatsSummaryProps {
   stats: InventoryStats;
 }
 
-const statCards = [
-  { key: 'total', label: 'Total Units' },
-  { key: 'generating', label: 'Rendering' },
-  { key: 'awaitingMint', label: 'Mint Queue' },
-  { key: 'minted', label: 'Minted' },
-] as const;
-
 export default function InventoryStatsSummary({ stats }: InventoryStatsSummaryProps) {
+  const { t } = useTranslation();
+  const statCards = [
+    { key: 'total', label: t('stats.totalUnits') },
+    { key: 'generating', label: t('stats.rendering') },
+    { key: 'awaitingMint', label: t('stats.mintQueue') },
+    { key: 'minted', label: t('stats.minted') },
+  ] as const;
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {statCards.map((card, index) => (

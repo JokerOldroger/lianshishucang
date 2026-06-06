@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type {
   InventoryActionKind,
   InventoryActionNotice,
@@ -32,12 +33,13 @@ export default function InventoryItemActions({
   notice,
   dataSource,
 }: InventoryItemActionsProps) {
+  const { t } = useTranslation();
   const isSelectedActionRunning =
     actionState?.collectionId && selectedItem?.collectionId === actionState.collectionId;
 
   const actionItems = [
     {
-      label: actionState?.kind === 'refresh' ? 'Refreshing…' : 'Refresh Grid',
+      label: actionState?.kind === 'refresh' ? t('itemActions.refreshing') : t('itemActions.refreshGrid'),
       enabled: !actionState,
       accent: 'cyan',
       onClick: onRefresh,
@@ -45,8 +47,8 @@ export default function InventoryItemActions({
     {
       label:
         actionState?.kind === 'generate_card' && isSelectedActionRunning
-          ? 'Rendering Card…'
-          : 'Generate Card',
+          ? t('itemActions.renderingCard')
+          : t('itemActions.generateCard'),
       enabled:
         Boolean(selectedItem) &&
         selectedItem?.status === 'stored' &&
@@ -58,8 +60,8 @@ export default function InventoryItemActions({
     {
       label:
         actionState?.kind === 'prepare_mint' && isSelectedActionRunning
-          ? 'Preparing Mint…'
-          : 'Prepare Mint',
+          ? t('itemActions.preparingMint')
+          : t('itemActions.prepareMint'),
       enabled:
         Boolean(selectedItem?.hasGeneratedCard) &&
         selectedItem?.status !== 'minted' &&
@@ -71,8 +73,8 @@ export default function InventoryItemActions({
     {
       label:
         actionState?.kind === 'mint_nft' && isSelectedActionRunning
-          ? 'Minting On-chain…'
-          : 'Mint NFT',
+          ? t('itemActions.mintingOnChain')
+          : t('itemActions.mintNft'),
       enabled:
         Boolean(selectedItem?.hasMintPrep) &&
         Boolean(selectedItem?.tokenUri) &&
@@ -83,7 +85,7 @@ export default function InventoryItemActions({
       onClick: () => onMintNFT?.(),
     },
     {
-      label: 'View Token URI',
+      label: t('itemActions.viewTokenUri'),
       enabled: Boolean(selectedItem?.tokenUri) && !actionState,
       accent: 'purple',
       onClick: () => onViewTokenUri(selectedItem?.tokenUri),
@@ -91,15 +93,15 @@ export default function InventoryItemActions({
   ] as const;
 
   const readiness = [
-    { label: 'Card Generated', active: Boolean(selectedItem?.hasGeneratedCard) },
-    { label: 'Mint Prepared', active: Boolean(selectedItem?.hasMintPrep) },
-    { label: 'NFT Linked', active: Boolean(selectedItem?.nftId) },
-    { label: 'Minted', active: selectedItem?.status === 'minted' || selectedItem?.status === 'shipped' },
+    { label: t('itemActions.cardGenerated'), active: Boolean(selectedItem?.hasGeneratedCard) },
+    { label: t('itemActions.mintPrepared'), active: Boolean(selectedItem?.hasMintPrep) },
+    { label: t('itemActions.nftLinked'), active: Boolean(selectedItem?.nftId) },
+    { label: t('itemActions.minted'), active: selectedItem?.status === 'minted' || selectedItem?.status === 'shipped' },
   ];
 
   return (
     <InventorySectionFrame
-      title="NFT Workflow"
+      title={t('itemActions.title')}
       rightAdornment={
         <div className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-100/80">
           {dataSource.toUpperCase()}
@@ -110,7 +112,7 @@ export default function InventoryItemActions({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.8fr)]">
         <div className="rounded-[1.35rem] border border-cyan-400/15 bg-[#071523]/75 p-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-            Selected Unit
+            {t('itemActions.selectedUnit')}
           </p>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -136,7 +138,7 @@ export default function InventoryItemActions({
 
         <div className="rounded-[1.35rem] border border-white/8 bg-white/5 p-4">
           <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-            Readiness Matrix
+            {t('itemActions.readinessMatrix')}
           </p>
           <div className="mt-4 space-y-3">
             {readiness.map((item) => (
@@ -152,7 +154,7 @@ export default function InventoryItemActions({
                       : 'border-white/10 bg-white/5 text-slate-400',
                   ].join(' ')}
                 >
-                  {item.active ? 'Ready' : 'Pending'}
+                  {item.active ? t('itemActions.ready') : t('itemActions.pending')}
                 </span>
               </div>
             ))}

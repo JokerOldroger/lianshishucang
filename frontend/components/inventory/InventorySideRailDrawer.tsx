@@ -7,6 +7,7 @@ import {
   WalletMinimal,
   X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface InventorySideRailDrawerProps {
   open: boolean;
@@ -16,16 +17,6 @@ interface InventorySideRailDrawerProps {
   onClose: () => void;
 }
 
-const businessItems = [
-  { key: 'library' as const, label: 'Library', Icon: Boxes },
-  { key: 'upload' as const, label: 'Upload', Icon: CloudUpload },
-  { key: 'prep' as const, label: 'NFT Prep', Icon: Sparkles },
-  { key: 'market' as const, label: 'Market', Icon: ChartCandlestick },
-  { key: 'storage' as const, label: 'Storage', Icon: HardDrive },
-];
-
-const walletItems = [{ key: 'access' as const, label: 'Access', Icon: WalletMinimal }];
-
 export default function InventorySideRailDrawer({
   open,
   workspace,
@@ -33,6 +24,15 @@ export default function InventorySideRailDrawer({
   onChange,
   onClose,
 }: InventorySideRailDrawerProps) {
+  const { t } = useTranslation();
+  const businessItems = [
+    { key: 'library' as const, label: t('nav.library'), Icon: Boxes },
+    { key: 'upload' as const, label: t('nav.upload'), Icon: CloudUpload },
+    { key: 'prep' as const, label: t('nav.nftPrep'), Icon: Sparkles },
+    { key: 'market' as const, label: t('nav.market'), Icon: ChartCandlestick },
+    { key: 'storage' as const, label: t('nav.storage'), Icon: HardDrive },
+  ];
+  const walletItems = [{ key: 'access' as const, label: t('nav.access'), Icon: WalletMinimal }];
   const items = workspace === 'business' ? businessItems : walletItems;
 
   if (!open) {
@@ -45,7 +45,7 @@ export default function InventorySideRailDrawer({
       <div className="absolute right-0 top-0 h-full w-72 border-l border-cyan-400/15 bg-[#06111c]/95 p-4 backdrop-blur-xl shadow-[0_0_24px_rgba(34,211,238,0.08)]">
         <div className="flex items-center justify-between">
           <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300/70">
-            {workspace === 'business' ? 'Business Views' : 'Wallet Views'}
+            {workspace === 'business' ? t('nav.businessViews') : t('nav.walletViews')}
           </p>
           <button
             type="button"

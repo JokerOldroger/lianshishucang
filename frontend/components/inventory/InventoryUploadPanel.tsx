@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, CloudUpload, CornerLeftUp, Sparkles } from 'lucide-react';
 import { useRef, useState } from 'react';
 import InventorySectionFrame from './InventorySectionFrame';
@@ -18,13 +19,6 @@ interface InventoryUploadPanelProps {
   onGuidedStageChange: (stage: 'upload' | 'review' | 'card' | 'mint') => void;
 }
 
-const stages = [
-  { key: 'upload' as const, label: 'Upload' },
-  { key: 'review' as const, label: 'Review' },
-  { key: 'card' as const, label: 'Card' },
-  { key: 'mint' as const, label: 'Mint' },
-];
-
 export default function InventoryUploadPanel({
   token,
   selectedItem,
@@ -35,8 +29,16 @@ export default function InventoryUploadPanel({
   guidedStage,
   onGuidedStageChange,
 }: InventoryUploadPanelProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  const stages = [
+    { key: 'upload' as const, label: t('upload.stageUpload') },
+    { key: 'review' as const, label: t('upload.stageReview') },
+    { key: 'card' as const, label: t('upload.stageCard') },
+    { key: 'mint' as const, label: t('upload.stageMint') },
+  ];
 
   const isReadyForOneClick = Boolean(token && conversionState.collectionId);
   const canGoBack = guidedStage !== 'upload';
@@ -46,7 +48,7 @@ export default function InventoryUploadPanel({
 
   return (
     <div className="space-y-6">
-      <InventorySectionFrame title="Upload & Convert" contentClassName="space-y-5">
+      <InventorySectionFrame title={t('upload.title')} contentClassName="space-y-5">
         <div className="flex flex-wrap gap-2">
           {stages.map((stage, index) => {
             const isActive = guidedStage === stage.key;
@@ -111,7 +113,7 @@ export default function InventoryUploadPanel({
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
             <CloudUpload size={28} />
           </div>
-          <h3 className="mt-5 text-2xl font-semibold text-white">Drop a collectible image</h3>
+          <h3 className="mt-5 text-2xl font-semibold text-white">{t('upload.dropZone')}</h3>
           <button
             type="button"
             onClick={(event) => {
@@ -120,31 +122,31 @@ export default function InventoryUploadPanel({
             }}
             className="mt-5 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-base font-medium text-cyan-100"
           >
-            Choose Image
+            {t('upload.chooseImage')}
           </button>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-5">
             <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-              Conversion Status
+              {t('upload.conversionStatus')}
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <StatusChip label="Upload" value={conversionState.uploadStatus} />
-              <StatusChip label="AI Identify" value={conversionState.aiStatus} />
-              <StatusChip label="Card" value={conversionState.cardStatus} />
-              <StatusChip label="Mint" value={conversionState.mintStatus} />
+              <StatusChip label={t('upload.uploadStatus')} value={conversionState.uploadStatus} />
+              <StatusChip label={t('upload.aiIdentify')} value={conversionState.aiStatus} />
+              <StatusChip label={t('upload.cardStatus')} value={conversionState.cardStatus} />
+              <StatusChip label={t('upload.mintStatus')} value={conversionState.mintStatus} />
             </div>
             <div className="mt-4 text-base text-slate-300/75">
-              <p>Collection ID: {conversionState.collectionId ?? '—'}</p>
-              <p className="mt-1 break-all">File: {conversionState.uploadedFileName ?? '—'}</p>
-              <p className="mt-1 break-all">Token URI: {conversionState.tokenUri ?? '—'}</p>
+              <p>{t('upload.collectionId')}: {conversionState.collectionId ?? '—'}</p>
+              <p className="mt-1 break-all">{t('upload.file')}: {conversionState.uploadedFileName ?? '—'}</p>
+              <p className="mt-1 break-all">{t('upload.tokenUri')}: {conversionState.tokenUri ?? '—'}</p>
             </div>
           </div>
 
           <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-5">
             <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-              Guided Actions
+              {t('upload.guidedActions')}
             </p>
             <div className="mt-4 flex flex-col gap-3">
               <button
@@ -159,7 +161,7 @@ export default function InventoryUploadPanel({
                 ].join(' ')}
               >
                 <Sparkles size={16} />
-                One-click Convert
+                {t('upload.oneClickConvert')}
               </button>
 
               <button
@@ -178,7 +180,7 @@ export default function InventoryUploadPanel({
                 ].join(' ')}
               >
                 <CornerLeftUp size={16} />
-                Back
+                {t('common.back')}
               </button>
 
               <button
@@ -205,12 +207,12 @@ export default function InventoryUploadPanel({
               >
                 <CheckCircle2 size={16} />
                 {guidedStage === 'upload'
-                  ? 'Go to Review'
+                  ? t('upload.goToReview')
                   : guidedStage === 'review'
-                    ? 'Go to Card'
+                    ? t('upload.goToCard')
                     : guidedStage === 'card'
-                      ? 'Go to Mint'
-                      : 'Completed'}
+                      ? t('upload.goToMint')
+                      : t('upload.completed')}
               </button>
             </div>
           </div>
@@ -232,7 +234,7 @@ export default function InventoryUploadPanel({
         ) : null}
       </InventorySectionFrame>
 
-      <InventorySectionFrame title="Current Focus">
+      <InventorySectionFrame title={t('upload.currentFocus')}>
         <div className="rounded-[1.35rem] border border-cyan-400/12 bg-[#08131f]/75 p-4">
           <p className="text-xl font-medium text-white">{selectedItem?.name ?? '—'}</p>
           <p className="mt-1 text-base text-slate-300/70">{selectedItem?.displayCode ?? '—'}</p>

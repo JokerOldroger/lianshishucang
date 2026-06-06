@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BriefcaseBusiness, Wallet2 } from 'lucide-react';
 
 interface InventoryBottomNavProps {
@@ -5,23 +6,23 @@ interface InventoryBottomNavProps {
   onChange: (tab: 'wallet' | 'business') => void;
 }
 
-const items = [
-  {
-    key: 'business' as const,
-    label: 'Business',
-    Icon: BriefcaseBusiness,
-  },
-  {
-    key: 'wallet' as const,
-    label: 'Wallet',
-    Icon: Wallet2,
-  },
-];
-
 export default function InventoryBottomNav({
   activeTab,
   onChange,
 }: InventoryBottomNavProps) {
+  const { t } = useTranslation();
+  const items = [
+    {
+      key: 'business' as const,
+      label: t('nav.business'),
+      Icon: BriefcaseBusiness,
+    },
+    {
+      key: 'wallet' as const,
+      label: t('nav.wallet'),
+      Icon: Wallet2,
+    },
+  ];
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
       <div className="pointer-events-auto flex gap-3 rounded-full border border-cyan-400/20 bg-[#06111c]/85 px-4 py-3 shadow-[0_0_28px_rgba(34,211,238,0.12)] backdrop-blur-xl">

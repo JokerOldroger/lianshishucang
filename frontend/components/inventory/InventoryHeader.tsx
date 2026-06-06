@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import type { InventoryDataSource, InventoryItemViewModel } from '../../types/inventory';
 
 interface InventoryHeaderProps {
@@ -7,6 +8,7 @@ interface InventoryHeaderProps {
 }
 
 export default function InventoryHeader({ selectedItem, dataSource }: InventoryHeaderProps) {
+  const { t } = useTranslation();
   return (
     <motion.div
       initial={{ opacity: 0, y: 18 }}
@@ -19,7 +21,7 @@ export default function InventoryHeader({ selectedItem, dataSource }: InventoryH
       <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl min-w-0 flex-1">
           <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-[2.7rem] break-words">
-            Holographic Inventory Matrix
+            {t('header.title')}
           </h1>
         </div>
 

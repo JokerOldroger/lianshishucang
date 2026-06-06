@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Menu } from 'lucide-react';
 import InventoryHeader from './InventoryHeader';
 import InventoryToolbar from './InventoryToolbar';
@@ -94,26 +95,33 @@ export default function InventoryPage() {
   const market = useInventoryMarketData(token, selectedItem);
   const wallet = useWallet();
   const contractWrite = useContractWrite();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith('zh') ? 'zh' : 'en';
+  const toggleLang = useCallback(() => {
+    const next = currentLang === 'zh' ? 'en' : 'zh';
+    i18n.changeLanguage(next);
+    localStorage.setItem('i18nextLng', next);
+  }, [currentLang, i18n]);
   const [mintNotice, setMintNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
 
   const handleMintNFT = useCallback(async () => {
     if (!selectedItem?.tokenUri || !wallet.address) {
       return;
     }
-    setMintNotice({ tone: 'info', message: 'Minting NFT on-chain…' });
+    setMintNotice({ tone: 'info', message: t('mint.mintingOnChain') });
     try {
       const hash = await contractWrite.mintNFT(
         wallet.address,
         selectedItem.tokenUri,
         selectedItem.royaltyFee ?? 250,
       );
-      setMintNotice({ tone: 'success', message: `NFT minted! Tx: ${hash.slice(0, 10)}…` });
+      setMintNotice({ tone: 'success', message: t('mint.mintedTx', { hash: hash.slice(0, 10) }) });
       setGuidedStage('mint');
       await refresh();
     } catch (err: unknown) {
       setMintNotice({
         tone: 'error',
-        message: err instanceof Error ? err.message : 'Mint failed',
+        message: err instanceof Error ? err.message : t('mint.mintFailed'),
       });
     }
   }, [selectedItem, wallet.address, contractWrite, refresh]);
@@ -163,38 +171,47 @@ export default function InventoryPage() {
 
       <div className="relative z-20 mx-auto flex w-full max-w-[1700px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <div className="min-w-0 flex-1 space-y-6">
-          <div className="flex items-center justify-between xl:hidden">
+          <div className="flex items-center justify-between">
             <div className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-100/80">
               {activeWorkspace === 'business' ? activeBusinessSection : activeWalletSection}
             </div>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              className="rounded-full border border-white/10 bg-[#06111c]/85 p-3 text-slate-300 transition hover:border-cyan-300/20 hover:text-white"
-            >
-              <Menu size={18} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleLang}
+                className="rounded-full border border-fuchsia-300/15 bg-fuchsia-300/8 px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-fuchsia-100 transition hover:border-fuchsia-300/30"
+              >
+                {currentLang === 'zh' ? 'EN' : '中文'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                className="rounded-full border border-white/10 bg-[#06111c]/85 p-3 text-slate-300 transition hover:border-cyan-300/20 hover:text-white xl:hidden"
+              >
+                <Menu size={18} />
+              </button>
+            </div>
           </div>
 
           {activeWorkspace === 'wallet' && activeWalletSection === 'access' ? (
-            <InventorySectionFrame title="Access" rightAdornment={
+            <InventorySectionFrame title={t('access.title')} rightAdornment={
               <button
                 type="button"
                 onClick={clearToken}
                 className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:border-cyan-300/30 hover:text-white"
               >
-                Clear
+                {t('access.clear')}
               </button>
             } contentClassName="space-y-4">
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_auto_auto] lg:items-end">
                 <label className="block">
                   <span className="mb-2 block font-mono text-[12px] uppercase tracking-[0.26em] text-cyan-300/70 sm:text-[13px]">
-                    JWT
+                    {t('access.jwt')}
                   </span>
                   <textarea
                     value={tokenInput}
                     onChange={(event) => setTokenInput(event.target.value)}
-                    placeholder="Paste Bearer JWT here"
+                    placeholder={t('access.jwtPlaceholder')}
                     rows={3}
                     className="w-full rounded-2xl border border-cyan-400/15 bg-[#071523]/80 px-4 py-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45 focus:shadow-[0_0_0_1px_rgba(103,232,249,0.2)]"
                   />
@@ -204,27 +221,27 @@ export default function InventoryPage() {
                   onClick={() => setToken(tokenInput)}
                   className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-base font-medium text-cyan-100 transition hover:-translate-y-0.5 hover:shadow-[0_0_18px_rgba(34,211,238,0.18)]"
                 >
-                  Save & Load
+                  {t('access.saveLoad')}
                 </button>
                 <button
                   type="button"
                   onClick={() => void refresh()}
                   className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-base font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
                 >
-                  Sync
+                  {t('access.sync')}
                 </button>
               </div>
 
               <div className="flex flex-wrap gap-3 text-base text-slate-300/75">
                 <span className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1">
-                  Mode: {dataSource.toUpperCase()}
+                  {t('access.mode', { mode: dataSource.toUpperCase() })}
                 </span>
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                  Token: {token ? 'Loaded' : 'Demo only'}
+                  {t('access.token', { status: token ? t('access.loaded') : t('access.demoOnly') })}
                 </span>
                 {loading ? (
                   <span className="rounded-full border border-yellow-300/15 bg-yellow-300/8 px-3 py-1 text-yellow-100">
-                    Syncing…
+                    {t('access.syncing')}
                   </span>
                 ) : null}
               </div>
@@ -313,9 +330,9 @@ export default function InventoryPage() {
               ) : null}
 
               {guidedStage === 'mint' ? (
-                <InventorySectionFrame title="Mint Stage" contentClassName="space-y-4">
+                <InventorySectionFrame title={t('mint.mintStage')} contentClassName="space-y-4">
                   <div className="rounded-[1.35rem] border border-cyan-400/12 bg-[#08131f]/75 p-4">
-                    <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-cyan-300/65 sm:text-[13px]">Token URI</p>
+                    <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-cyan-300/65 sm:text-[13px]">{t('mint.tokenUri')}</p>
                     <p className="mt-3 break-all text-lg font-medium text-white">{conversionState.tokenUri ?? '—'}</p>
                   </div>
                   <div className="flex flex-wrap gap-3">
@@ -324,14 +341,14 @@ export default function InventoryPage() {
                       onClick={() => conversionState.tokenUri && void viewTokenUriForItem(conversionState.tokenUri)}
                       className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-base font-medium text-cyan-100 transition hover:-translate-y-0.5"
                     >
-                      View Token URI
+                      {t('mint.viewTokenUri')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveBusinessSection('prep')}
                       className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
                     >
-                      Open NFT Prep
+                      {t('mint.openNftPrep')}
                     </button>
                   </div>
                 </InventorySectionFrame>

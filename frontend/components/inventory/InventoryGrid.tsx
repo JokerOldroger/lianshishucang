@@ -3,6 +3,7 @@ import InventorySlot from '../InventorySlot';
 import { ACCENT_STYLES } from '../../lib/inventory/constants';
 import type { InventoryItemViewModel } from '../../types/inventory';
 import InventoryEmptyState from './InventoryEmptyState';
+import { useTranslation } from 'react-i18next';
 import InventorySectionFrame from './InventorySectionFrame';
 
 interface InventoryGridProps {
@@ -12,12 +13,13 @@ interface InventoryGridProps {
 }
 
 export default function InventoryGrid({ items, selectedId, onSelect }: InventoryGridProps) {
+  const { t } = useTranslation();
   if (!items.length) {
-    return <InventoryEmptyState title="No Results" message="No items" />;
+    return <InventoryEmptyState title={t('grid.noResults')} message={t('grid.noItems')} />;
   }
 
   return (
-    <InventorySectionFrame title="Collection Grid" contentClassName="space-y-5">
+    <InventorySectionFrame title={t('grid.title')} contentClassName="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {items.map((item, index) => {
           const isSelected = item.id === selectedId;

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import InventorySectionFrame from './InventorySectionFrame';
 import type { InventoryItemViewModel } from '../../types/inventory';
 
@@ -6,31 +7,32 @@ interface InventoryTradingStatsProps {
 }
 
 export default function InventoryTradingStats({ items }: InventoryTradingStatsProps) {
+  const { t } = useTranslation();
   const stats = [
     {
-      label: 'Total Collectibles',
+      label: t('tradingStats.totalCollectibles'),
       value: items.length,
     },
     {
-      label: 'Card Ready',
+      label: t('tradingStats.cardReady'),
       value: items.filter((item) => item.hasGeneratedCard).length,
     },
     {
-      label: 'Mint Prepared',
+      label: t('tradingStats.mintPrepared'),
       value: items.filter((item) => item.hasMintPrep).length,
     },
     {
-      label: 'Minted',
+      label: t('tradingStats.minted'),
       value: items.filter((item) => item.status === 'minted').length,
     },
     {
-      label: 'NFT Linked',
+      label: t('tradingStats.nftLinked'),
       value: items.filter((item) => Boolean(item.nftId)).length,
     },
   ];
 
   return (
-    <InventorySectionFrame title="Trading Metrics" contentClassName="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <InventorySectionFrame title={t('tradingStats.title')} contentClassName="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
       {stats.map((stat) => (
         <div
           key={stat.label}

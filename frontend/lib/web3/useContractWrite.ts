@@ -1,3 +1,4 @@
+import i18n from '../../lib/i18n/i18n';
 import { useCallback } from 'react';
 import {
   createWalletClient,
@@ -38,7 +39,7 @@ export function useContractWrite() {
   const mintNFT = useCallback(
     async (to: string, tokenUri: string, royaltyFee: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -57,7 +58,7 @@ export function useContractWrite() {
   const createListing = useCallback(
     async (nftContract: string, tokenId: number, priceWei: string): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -76,7 +77,7 @@ export function useContractWrite() {
   const cancelListing = useCallback(
     async (listingId: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -95,7 +96,7 @@ export function useContractWrite() {
   const buyItem = useCallback(
     async (listingId: number, valueWei: string): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -115,7 +116,7 @@ export function useContractWrite() {
   const approveNFT = useCallback(
     async (nftContract: string, operator: string, tokenId: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -134,7 +135,7 @@ export function useContractWrite() {
   const setApprovalForAll = useCallback(
     async (nftContract: string, operator: string, approved: boolean): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -153,7 +154,7 @@ export function useContractWrite() {
   const updatePrice = useCallback(
     async (listingId: number, newPriceWei: string): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -172,7 +173,7 @@ export function useContractWrite() {
   const createOffer = useCallback(
     async (nftContract: string, tokenId: number, priceWei: string, expiration: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -191,7 +192,7 @@ export function useContractWrite() {
   const cancelOffer = useCallback(
     async (tokenId: number, offerIndex: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -210,7 +211,7 @@ export function useContractWrite() {
   const acceptOffer = useCallback(
     async (nftContract: string, tokenId: number, offerIndex: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -229,7 +230,7 @@ export function useContractWrite() {
   const cancelAuction = useCallback(
     async (auctionId: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -248,7 +249,7 @@ export function useContractWrite() {
   const claimRefund = useCallback(
     async (auctionId: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -334,7 +335,7 @@ export function useContractWrite() {
       endTime: number,
     ): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -360,7 +361,7 @@ export function useContractWrite() {
   const placeBid = useCallback(
     async (auctionId: number, valueWei: string): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -380,7 +381,7 @@ export function useContractWrite() {
   const endAuction = useCallback(
     async (auctionId: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({
@@ -399,7 +400,7 @@ export function useContractWrite() {
   const settleAuction = useCallback(
     async (auctionId: number): Promise<`0x${string}`> => {
       const clients = getClients();
-      if (!clients) throw new Error('Wallet not connected');
+      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
       const { walletClient, publicClient } = clients;
       const accounts = await walletClient.requestAddresses();
       const hash = await walletClient.writeContract({

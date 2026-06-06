@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   InventoryItemViewModel,
   InventoryMarketAuctionViewModel,
@@ -49,6 +50,7 @@ export function useInventoryMarketData(
   const [market, setMarket] = useState<InventoryMarketData>(EMPTY_MARKET_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const loadMarketData = useCallback(async () => {
     if (!token) {
@@ -117,7 +119,7 @@ export function useInventoryMarketData(
       (result) => result.status === 'rejected',
     );
 
-    setError(failures.length ? 'Some live market modules could not be loaded. Showing partial market visibility.' : null);
+    setError(failures.length ? t('hooks.useInventoryMarketData.partialMarket') : null);
     setLoading(false);
   }, [selectedItem?.nftId, token]);
 

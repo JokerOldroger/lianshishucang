@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   CARD_FILTER_OPTIONS,
   LIFECYCLE_FILTER_OPTIONS,
@@ -33,12 +34,13 @@ export default function InventoryToolbar({
   onCardFilterChange,
   onSortByChange,
 }: InventoryToolbarProps) {
+  const { t } = useTranslation();
   return (
     <InventorySectionFrame
-      title="Query / Filter Matrix"
+      title={t('toolbar.title')}
       rightAdornment={
         <div className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-100/80">
-          {resultCount} units visible
+          {t('toolbar.unitsVisible', { count: resultCount })}
         </div>
       }
       contentClassName="space-y-5"
@@ -46,24 +48,24 @@ export default function InventoryToolbar({
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_repeat(2,minmax(0,1fr))]">
         <label className="block">
           <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-            Search Signal
+            {t('toolbar.searchSignal')}
           </span>
           <input
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
-            placeholder="Search names, codes, materials..."
+            placeholder={t('toolbar.searchPlaceholder')}
             className="w-full rounded-2xl border border-cyan-400/15 bg-[#071523]/80 px-4 py-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45 focus:shadow-[0_0_0_1px_rgba(103,232,249,0.2)]"
           />
         </label>
 
         <SelectField
-          label="Lifecycle"
+          label={t('toolbar.lifecycle')}
           value={statusFilter}
           options={LIFECYCLE_FILTER_OPTIONS}
           onChange={(value) => onStatusFilterChange(value as InventoryFilterStatus)}
         />
         <SelectField
-          label="Card Pipeline"
+          label={t('toolbar.cardPipeline')}
           value={cardFilter}
           options={CARD_FILTER_OPTIONS}
           onChange={(value) => onCardFilterChange(value as InventoryCardFilterStatus)}
@@ -72,7 +74,7 @@ export default function InventoryToolbar({
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <SelectField
-          label="Sort Mode"
+          label={t('toolbar.sortMode')}
           value={sortBy}
           options={SORT_OPTIONS}
           onChange={(value) => onSortByChange(value as InventorySortBy)}
@@ -80,7 +82,7 @@ export default function InventoryToolbar({
 
         <div>
           <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-            Quick Filters
+            {t('toolbar.quickFilters')}
           </span>
           <div className="flex flex-wrap gap-2">
             {LIFECYCLE_FILTER_OPTIONS.slice(1, 5).map((option) => {

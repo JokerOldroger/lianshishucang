@@ -1,30 +1,32 @@
+import { useTranslation } from 'react-i18next';
+
 interface InventoryBusinessTabsProps {
   activeTab: 'collection' | 'trading' | 'storage';
   onChange: (tab: 'collection' | 'trading' | 'storage') => void;
 }
 
-const tabs = [
-  {
-    key: 'collection' as const,
-    label: 'Collection',
-  },
-  {
-    key: 'trading' as const,
-    label: 'NFT Trading',
-  },
-  {
-    key: 'storage' as const,
-    label: 'Storage',
-  },
-];
-
 export default function InventoryBusinessTabs({
   activeTab,
   onChange,
 }: InventoryBusinessTabsProps) {
+  const { t } = useTranslation();
+  const tabs = [
+    {
+      key: 'collection' as const,
+      label: t('nav.collection'),
+    },
+    {
+      key: 'trading' as const,
+      label: t('nav.nftTrading'),
+    },
+    {
+      key: 'storage' as const,
+      label: t('nav.storage'),
+    },
+  ];
   return (
     <div className="rounded-[1.5rem] border border-cyan-400/15 bg-[#06111c]/60 p-3 backdrop-blur-lg shadow-[0_0_24px_rgba(34,211,238,0.08)]">
-      <div role="tablist" aria-label="Business workspace views" className="flex flex-wrap gap-2">
+      <div role="tablist" aria-label={t('nav.businessWorkspaceViews')} className="flex flex-wrap gap-2">
         {tabs.map((tab) => {
           const isActive = tab.key === activeTab;
           const tabId = `business-tab-${tab.key}`;

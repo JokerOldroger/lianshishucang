@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import type { KeyboardEvent } from 'react';
 
 interface InventorySlotProps {
@@ -18,6 +19,7 @@ export default function InventorySlot({
   isSelected,
   onClick,
 }: InventorySlotProps) {
+  const { t } = useTranslation();
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -30,7 +32,7 @@ export default function InventorySlot({
       role="button"
       tabIndex={0}
       title={name}
-      aria-label={`${name} (${id})`}
+      aria-label={t('grid.ariaLabel', { name, id })}
       aria-pressed={isSelected}
       onClick={onClick}
       onKeyDown={handleKeyDown}

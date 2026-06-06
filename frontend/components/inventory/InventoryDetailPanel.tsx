@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ACCENT_STYLES } from '../../lib/inventory/constants';
 import type { InventoryItemViewModel } from '../../types/inventory';
@@ -12,23 +13,24 @@ interface InventoryDetailPanelProps {
 }
 
 export default function InventoryDetailPanel({ item }: InventoryDetailPanelProps) {
+  const { t } = useTranslation();
   const [activePanel, setActivePanel] = useState<'overview' | 'attributes' | 'lifecycle'>('overview');
 
   if (!item) {
-    return <InventoryEmptyState title="No Unit Selected" message="No data" />;
+    return <InventoryEmptyState title={t('detailPanel.noUnitSelected')} message={t('detailPanel.noData')} />;
   }
 
   const accent = ACCENT_STYLES[item.accentTone];
   const timeline = [
-    { label: 'Upload Indexed', active: true },
-    { label: 'AI Identified', active: item.status !== 'pending_ai' },
-    { label: 'Card Rendered', active: item.cardGenerationStatus === 'completed' },
-    { label: 'Mint Prepared', active: item.hasMintPrep },
-    { label: 'Minted', active: item.status === 'minted' || item.status === 'shipped' },
+    { label: t('detailPanel.uploadIndexed'), active: true },
+    { label: t('detailPanel.aiIdentified'), active: item.status !== 'pending_ai' },
+    { label: t('detailPanel.cardRendered'), active: item.cardGenerationStatus === 'completed' },
+    { label: t('detailPanel.mintPrepared'), active: item.hasMintPrep },
+    { label: t('detailPanel.minted'), active: item.status === 'minted' || item.status === 'shipped' },
   ];
 
   return (
-    <InventorySectionFrame title="Selected Unit / Diagnostics" contentClassName="space-y-6">
+    <InventorySectionFrame title={t('detailPanel.title')} contentClassName="space-y-6">
       <div className="grid gap-6">
         <motion.div
           key={item.id}
@@ -63,7 +65,7 @@ export default function InventoryDetailPanel({ item }: InventoryDetailPanelProps
                   {item.name}
                 </h2>
                 <p className="mt-2 text-base text-slate-300/70">
-                  {item.physicalLocation ?? '—'}
+                  {item.physicalLocation ?? t('common.none')}
                 </p>
               </div>
 
@@ -91,28 +93,28 @@ export default function InventoryDetailPanel({ item }: InventoryDetailPanelProps
 
         <div className="grid gap-4 sm:grid-cols-2">
           <StatCard
-            label="Royalty Fee"
-            value={item.royaltyFee ? `${(item.royaltyFee / 100).toFixed(2)}%` : '—'}
+            label={t('detailPanel.royaltyFee')}
+            value={item.royaltyFee ? `${(item.royaltyFee / 100).toFixed(2)}%` : t('common.none')}
           />
-          <StatCard label="Mint Signal" value={item.hasMintPrep ? 'Prepared' : 'Awaiting'} />
-          <StatCard label="Linked NFT" value={item.nftName ?? 'Unlinked'} />
-          <StatCard label="Token URI" value={truncateMiddle(item.tokenUri ?? 'Unavailable', 26)} />
+          <StatCard label={t('detailPanel.mintSignal')} value={item.hasMintPrep ? t('detailPanel.prepared') : t('detailPanel.awaiting')} />
+          <StatCard label={t('detailPanel.linkedNft')} value={item.nftName ?? t('detailPanel.unlinked')} />
+          <StatCard label={t('detailPanel.tokenUri')} value={truncateMiddle(item.tokenUri ?? t('common.unavailable'), 26)} />
         </div>
 
         <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
           <div className="flex flex-wrap gap-2">
             <PanelTab
-              label="Overview"
+              label={t('detailPanel.overview')}
               active={activePanel === 'overview'}
               onClick={() => setActivePanel('overview')}
             />
             <PanelTab
-              label="Attributes"
+              label={t('detailPanel.attributes')}
               active={activePanel === 'attributes'}
               onClick={() => setActivePanel('attributes')}
             />
             <PanelTab
-              label="Lifecycle"
+              label={t('detailPanel.lifecycle')}
               active={activePanel === 'lifecycle'}
               onClick={() => setActivePanel('lifecycle')}
             />
@@ -123,26 +125,26 @@ export default function InventoryDetailPanel({ item }: InventoryDetailPanelProps
               <div className="grid gap-4 lg:grid-cols-2">
                 <div className="rounded-[1.35rem] border border-cyan-400/12 bg-[#08131f]/75 p-4">
                   <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-cyan-300/70 sm:text-[13px]">
-                    Asset Summary
+                    {t('detailPanel.assetSummary')}
                   </p>
                   <dl className="mt-4 space-y-3 text-base">
-                    <Row label="Collection" value={item.displayCode} />
-                    <Row label="Status" value={item.statusLabel} />
-                    <Row label="Card" value={item.cardStatusLabel} />
-                    <Row label="Location" value={item.physicalLocation ?? '—'} />
-                    <Row label="Token URI" value={truncateMiddle(item.tokenUri ?? 'Unavailable', 28)} />
+                    <Row label={t('detailPanel.collection')} value={item.displayCode} />
+                    <Row label={t('detailPanel.status')} value={item.statusLabel} />
+                    <Row label={t('detailPanel.card')} value={item.cardStatusLabel} />
+                    <Row label={t('detailPanel.location')} value={item.physicalLocation ?? t('common.none')} />
+                    <Row label={t('detailPanel.tokenUri')} value={truncateMiddle(item.tokenUri ?? t('common.unavailable'), 28)} />
                   </dl>
                 </div>
                 <div className="rounded-[1.35rem] border border-cyan-400/12 bg-[#08131f]/75 p-4">
                   <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-cyan-300/70 sm:text-[13px]">
-                    NFT Summary
+                    {t('detailPanel.nftSummary')}
                   </p>
                   <dl className="mt-4 space-y-3 text-base">
-                    <Row label="Linked NFT" value={item.nftName ?? 'Unlinked'} />
-                    <Row label="Royalty" value={item.royaltyFee ? `${(item.royaltyFee / 100).toFixed(2)}%` : '—'} />
-                    <Row label="Created" value={formatDate(item.createdAt)} />
-                    <Row label="Updated" value={formatDate(item.updatedAt)} />
-                    <Row label="Mint Prep" value={item.hasMintPrep ? 'Prepared' : 'Pending'} />
+                    <Row label={t('detailPanel.linkedNft')} value={item.nftName ?? t('detailPanel.unlinked')} />
+                    <Row label={t('detailPanel.royalty')} value={item.royaltyFee ? `${(item.royaltyFee / 100).toFixed(2)}%` : t('common.none')} />
+                    <Row label={t('detailPanel.created')} value={formatDate(item.createdAt)} />
+                    <Row label={t('detailPanel.updated')} value={formatDate(item.updatedAt)} />
+                    <Row label={t('detailPanel.mintPrep')} value={item.hasMintPrep ? t('detailPanel.prepared') : t('common.pending')} />
                   </dl>
                 </div>
               </div>
@@ -150,9 +152,9 @@ export default function InventoryDetailPanel({ item }: InventoryDetailPanelProps
 
             {activePanel === 'attributes' ? (
               <div>
-                <p className="font-mono text-[12px] uppercase tracking-[0.26em] text-cyan-300/70 sm:text-[13px]">
-                  Attribute Matrix
-                </p>
+                  <p className="font-mono text-[12px] uppercase tracking-[0.26em] text-cyan-300/70 sm:text-[13px]">
+                    {t('detailPanel.attributeMatrix')}
+                  </p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   {item.attributes.length ? (
                     item.attributes.map((attribute) => (
@@ -173,9 +175,9 @@ export default function InventoryDetailPanel({ item }: InventoryDetailPanelProps
 
             {activePanel === 'lifecycle' ? (
               <div>
-                <p className="font-mono text-[12px] uppercase tracking-[0.26em] text-cyan-300/70 sm:text-[13px]">
-                  Lifecycle Chain
-                </p>
+                  <p className="font-mono text-[12px] uppercase tracking-[0.26em] text-cyan-300/70 sm:text-[13px]">
+                    {t('detailPanel.lifecycleChain')}
+                  </p>
                 <div className="mt-4 space-y-4">
                   {timeline.map((step) => (
                     <div key={step.label} className="flex items-center gap-4">

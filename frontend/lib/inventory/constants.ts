@@ -1,3 +1,4 @@
+import i18n from '../../lib/i18n/i18n';
 import type {
   InventoryAccentTone,
   InventoryCardFilterStatus,
@@ -9,19 +10,19 @@ import type {
 } from '../../types/inventory';
 
 export const STATUS_LABELS: Record<InventoryLifecycleStatus, string> = {
-  pending_ai: 'Pending AI',
-  stored: 'Stored',
-  failed: 'Flagged',
-  awaiting_mint: 'Pending Mint',
-  minted: 'Minted',
-  shipped: 'Archived',
+  pending_ai: i18n.t('status.pendingAi'),
+  stored: i18n.t('status.stored'),
+  failed: i18n.t('status.flagged'),
+  awaiting_mint: i18n.t('status.pendingMint'),
+  minted: i18n.t('status.minted'),
+  shipped: i18n.t('status.archived'),
 };
 
 export const CARD_STATUS_LABELS: Record<InventoryCardStatus, string> = {
-  pending: 'Card Pending',
-  generating: 'Rendering',
-  completed: 'Card Ready',
-  failed: 'Render Failed',
+  pending: i18n.t('status.cardPending'),
+  generating: i18n.t('status.rendering'),
+  completed: i18n.t('status.cardReady'),
+  failed: i18n.t('status.renderFailed'),
 };
 
 export const STATUS_ACCENTS: Record<InventoryLifecycleStatus, InventoryAccentTone> = {
@@ -34,28 +35,28 @@ export const STATUS_ACCENTS: Record<InventoryLifecycleStatus, InventoryAccentTon
 };
 
 export const LIFECYCLE_FILTER_OPTIONS: InventoryFilterOption<InventoryFilterStatus>[] = [
-  { value: 'all', label: 'All States' },
-  { value: 'stored', label: 'Stored' },
-  { value: 'awaiting_mint', label: 'Pending Mint' },
-  { value: 'minted', label: 'Minted' },
-  { value: 'failed', label: 'Flagged' },
-  { value: 'pending_ai', label: 'Pending AI' },
-  { value: 'shipped', label: 'Archived' },
+  { value: 'all', label: i18n.t('status.allStates') },
+  { value: 'stored', label: i18n.t('status.stored') },
+  { value: 'awaiting_mint', label: i18n.t('status.pendingMint') },
+  { value: 'minted', label: i18n.t('status.minted') },
+  { value: 'failed', label: i18n.t('status.flagged') },
+  { value: 'pending_ai', label: i18n.t('status.pendingAi') },
+  { value: 'shipped', label: i18n.t('status.archived') },
 ];
 
 export const CARD_FILTER_OPTIONS: InventoryFilterOption<InventoryCardFilterStatus>[] = [
-  { value: 'all', label: 'All Cards' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'generating', label: 'Rendering' },
-  { value: 'completed', label: 'Ready' },
-  { value: 'failed', label: 'Failed' },
+  { value: 'all', label: i18n.t('status.allCards') },
+  { value: 'pending', label: i18n.t('common.pending') },
+  { value: 'generating', label: i18n.t('status.rendering') },
+  { value: 'completed', label: i18n.t('common.ready') },
+  { value: 'failed', label: i18n.t('common.failed') },
 ];
 
 export const SORT_OPTIONS: InventoryFilterOption<InventorySortBy>[] = [
-  { value: 'updated_desc', label: 'Recently Updated' },
-  { value: 'created_desc', label: 'Newest Added' },
-  { value: 'name_asc', label: 'Name A-Z' },
-  { value: 'status', label: 'Status Matrix' },
+  { value: 'updated_desc', label: i18n.t('status.sortRecentlyUpdated') },
+  { value: 'created_desc', label: i18n.t('status.sortNewestAdded') },
+  { value: 'name_asc', label: i18n.t('status.sortNameAZ') },
+  { value: 'status', label: i18n.t('status.sortStatusMatrix') },
 ];
 
 export const ACCENT_STYLES: Record<

@@ -6,6 +6,7 @@ import {
   Sparkles,
   WalletMinimal,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface InventorySideRailProps {
   workspace: 'business' | 'wallet';
@@ -15,16 +16,6 @@ interface InventorySideRailProps {
   onToggle: () => void;
 }
 
-const businessItems = [
-  { key: 'library' as const, label: 'Library', Icon: Boxes },
-  { key: 'upload' as const, label: 'Upload', Icon: CloudUpload },
-  { key: 'prep' as const, label: 'NFT Prep', Icon: Sparkles },
-  { key: 'market' as const, label: 'Market', Icon: ChartCandlestick },
-  { key: 'storage' as const, label: 'Storage', Icon: HardDrive },
-];
-
-const walletItems = [{ key: 'access' as const, label: 'Access', Icon: WalletMinimal }];
-
 export default function InventorySideRail({
   workspace,
   activeSection,
@@ -32,6 +23,15 @@ export default function InventorySideRail({
   collapsed,
   onToggle,
 }: InventorySideRailProps) {
+  const { t } = useTranslation();
+  const businessItems = [
+    { key: 'library' as const, label: t('nav.library'), Icon: Boxes },
+    { key: 'upload' as const, label: t('nav.upload'), Icon: CloudUpload },
+    { key: 'prep' as const, label: t('nav.nftPrep'), Icon: Sparkles },
+    { key: 'market' as const, label: t('nav.market'), Icon: ChartCandlestick },
+    { key: 'storage' as const, label: t('nav.storage'), Icon: HardDrive },
+  ];
+  const walletItems = [{ key: 'access' as const, label: t('nav.access'), Icon: WalletMinimal }];
   const items = workspace === 'business' ? businessItems : walletItems;
 
   return (
@@ -41,7 +41,7 @@ export default function InventorySideRail({
         onClick={onToggle}
         className="rounded-full border border-white/10 bg-[#06111c]/85 px-3 py-2 text-xs text-slate-300/80 transition hover:border-cyan-300/20 hover:text-white"
       >
-        {collapsed ? 'Expand' : 'Collapse'}
+        {collapsed ? t('nav.expand') : t('nav.collapse')}
       </button>
       <div
         className={[

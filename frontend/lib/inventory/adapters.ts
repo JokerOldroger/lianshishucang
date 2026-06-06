@@ -1,3 +1,4 @@
+import i18n from '../../lib/i18n/i18n';
 import {
   CARD_STATUS_LABELS,
   STATUS_ACCENTS,
@@ -100,7 +101,7 @@ export function adaptCollectionToInventoryItem(
     id: String(collection.id),
     collectionId: collection.id,
     displayCode: `COL-${String(collection.id).padStart(4, '0')}`,
-    name: collection.name?.trim() || 'Untitled Collectible',
+    name: collection.name?.trim() || i18n.t('adapters.untitledCollectible'),
     imageUrl:
       collection.virtual_card_url?.trim() ||
       collection.raw_image_url?.trim() ||
@@ -197,7 +198,7 @@ export function adaptBackendNFTToDetailViewModel(
   return {
     id: nft.id,
     tokenId: nft.token_id ? `#${nft.token_id}` : 'Pending',
-    name: nft.name?.trim() || 'Untitled NFT',
+    name: nft.name?.trim() || i18n.t('adapters.untitledNft'),
     imageUrl: resolveTradingImage(nft.image),
     tokenUri: nft.token_uri?.trim() || undefined,
     ownerLabel: formatWalletLabel(nft.owner),
@@ -216,7 +217,7 @@ export function adaptListingToMarketListingViewModel(
     listingId: String(listing.listing_id ?? listing.id),
     nftId: listing.nft_id ?? listing.nft?.id,
     nftContract: listing.nft?.contract_address || undefined,
-    title: listing.nft?.name?.trim() || 'Untitled Listing',
+    title: listing.nft?.name?.trim() || i18n.t('adapters.untitledListing'),
     imageUrl: resolveTradingImage(listing.nft?.image),
     sellerLabel: formatWalletLabel(listing.seller),
     priceWei: listing.price_wei,
@@ -235,7 +236,7 @@ export function adaptAuctionToMarketAuctionViewModel(
     id: String(auction.id),
     auctionId: String(auction.auction_id ?? auction.id),
     nftId: auction.nft_id ?? auction.nft?.id,
-    title: auction.nft?.name?.trim() || 'Untitled Auction',
+    title: auction.nft?.name?.trim() || i18n.t('adapters.untitledAuction'),
     imageUrl: resolveTradingImage(auction.nft?.image),
     sellerLabel: formatWalletLabel(auction.seller),
     startPriceWei: auction.start_price_wei || '0',
@@ -372,7 +373,7 @@ function formatWeiToEthLabel(wei: string): string {
     const whole = value / 1000000000000000000n;
     const fraction = value % 1000000000000000000n;
     const fractionString = fraction.toString().padStart(18, '0').slice(0, 4).replace(/0+$/, '');
-    return fractionString ? `${whole}.${fractionString} ETH` : `${whole} ETH`;
+    return fractionString ? `${whole}.${fractionString}${i18n.t('adapters.ethUnit')}` : `${whole}${i18n.t('adapters.ethUnit')}`;
   } catch {
     return '—';
   }
@@ -380,7 +381,7 @@ function formatWeiToEthLabel(wei: string): string {
 
 function formatWalletLabel(user?: BackendUserSummary | null): string {
   if (!user) {
-    return 'Unknown';
+    return i18n.t('common.unknown');
   }
 
   if (user.nickname?.trim()) {
@@ -391,7 +392,7 @@ function formatWalletLabel(user?: BackendUserSummary | null): string {
     return truncateWallet(user.wallet_address);
   }
 
-  return user.id ? `User #${user.id}` : 'Unknown';
+  return user.id ? i18n.t('adapters.userPrefix', { id: user.id }) : i18n.t('common.unknown');
 }
 
 function truncateWallet(wallet: string): string {
@@ -408,28 +409,28 @@ function resolveTradingImage(image?: string): string {
 
 function formatTimeStateLabel(endTime?: string): string {
   if (!endTime) {
-    return 'No end time';
+    return i18n.t('adapters.noEndTime');
   }
 
   const endTimestamp = Date.parse(endTime);
   if (Number.isNaN(endTimestamp)) {
-    return 'Invalid end time';
+    return i18n.t('adapters.invalidEndTime');
   }
 
   const deltaMs = endTimestamp - Date.now();
   if (deltaMs <= 0) {
-    return 'Ended';
+    return i18n.t('adapters.ended');
   }
 
   const hours = Math.floor(deltaMs / (1000 * 60 * 60));
   if (hours >= 24) {
-    return `${Math.ceil(hours / 24)}d left`;
+    return i18n.t('adapters.daysLeft', { count: Math.ceil(hours / 24) });
   }
 
   if (hours >= 1) {
-    return `${hours}h left`;
+    return i18n.t('adapters.hoursLeft', { count: hours });
   }
 
   const minutes = Math.max(1, Math.floor(deltaMs / (1000 * 60)));
-  return `${minutes}m left`;
+  return i18n.t('adapters.minutesLeft', { count: minutes });
 }

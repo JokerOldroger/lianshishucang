@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ApiError } from '../api/client';
 import { clearStoredInventoryToken, getStoredInventoryToken, storeInventoryToken } from '../api/auth';
 import {
@@ -94,6 +95,7 @@ export function useInventoryData(): UseInventoryDataResult {
   const [notice, setNotice] = useState<InventoryActionNotice | null>(null);
   const [actionState, setActionState] = useState<InventoryActionState | null>(null);
   const [conversionState, setConversionState] = useState<InventoryConversionState>(INITIAL_CONVERSION_STATE);
+  const { t } = useTranslation();
   const [guidedStage, setGuidedStage] = useState<'upload' | 'review' | 'card' | 'mint'>('upload');
   const [guidedCollectionId, setGuidedCollectionId] = useState<number | undefined>(undefined);
 
@@ -105,7 +107,7 @@ export function useInventoryData(): UseInventoryDataResult {
     if (!authToken) {
       setData(inventoryDemoData);
       setDataSource('demo');
-      setError('Paste a test JWT to load your real collections. Showing demo inventory for now.');
+      setError(t('hooks.useInventoryData.noTokenInfo'));
       setLoading(false);
       return;
     }
@@ -171,7 +173,7 @@ export function useInventoryData(): UseInventoryDataResult {
     try {
       await loadInventory(token);
       if (token) {
-        setNotice({ tone: 'success', message: 'Inventory refreshed from the backend.' });
+        setNotice({ tone: 'success', message: t('hooks.useInventoryData.refreshSuccess') });
       }
     } finally {
       setActionState(null);
@@ -181,13 +183,13 @@ export function useInventoryData(): UseInventoryDataResult {
   const setToken = useCallback((nextToken: string) => {
     storeInventoryToken(nextToken);
     setTokenState(nextToken.trim());
-    setNotice({ tone: 'success', message: 'JWT saved. Reloading live inventory stream…' });
+    setNotice({ tone: 'success', message: t('hooks.useInventoryData.jwtSaved') });
   }, []);
 
   const clearToken = useCallback(() => {
     clearStoredInventoryToken();
     setTokenState('');
-    setNotice({ tone: 'info', message: 'Live token cleared. Falling back to demo mode.' });
+    setNotice({ tone: 'info', message: t('hooks.useInventoryData.tokenCleared') });
   }, []);
 
   const updateItem = useCallback(
@@ -211,16 +213,16 @@ export function useInventoryData(): UseInventoryDataResult {
   const generateCardForItem = useCallback(
     async (collectionId: number) => {
       if (!token) {
-        setNotice({ tone: 'error', message: 'Paste a test JWT before triggering Generate Card.' });
+        setNotice({ tone: 'error', message: t('hooks.useInventoryData.noTokenGenerateCard') });
         return;
       }
 
       setActionState({ kind: 'generate_card', collectionId });
-      setNotice({ tone: 'info', message: 'Card generation triggered. Polling render status…' });
+      setNotice({ tone: 'info', message: t('hooks.useInventoryData.cardGenerating') });
 
       try {
         await generateCollectionCard(token, collectionId, DEFAULT_STYLE_PROMPT);
-        const status = await pollCardStatus(token, collectionId);
+        const status = await pollCardStatus(token, collectionId, t);
         updateItem(collectionId, (item) => adaptCardStatusIntoItem(item, status));
         setConversionState((current) => ({
           ...current,
@@ -230,9 +232,9 @@ export function useInventoryData(): UseInventoryDataResult {
         setGuidedCollectionId(collectionId);
         setGuidedStage('mint');
         await loadInventory(token);
-        setNotice({ tone: 'success', message: 'Virtual card render completed and inventory refreshed.' });
+        setNotice({ tone: 'success', message: t('hooks.useInventoryData.cardGenerated') });
       } catch (requestError) {
-        setNotice({ tone: 'error', message: toReadableError(requestError, 'Generate Card failed.') });
+        setNotice({ tone: 'error', message: toReadableError(requestError, t('hooks.useInventoryData.generateCardFailed')) });
       } finally {
         setActionState(null);
       }
@@ -243,12 +245,12 @@ export function useInventoryData(): UseInventoryDataResult {
   const prepareMintForItem = useCallback(
     async (collectionId: number) => {
       if (!token) {
-        setNotice({ tone: 'error', message: 'Paste a test JWT before triggering Prepare Mint.' });
+        setNotice({ tone: 'error', message: t('hooks.useInventoryData.noTokenPrepareMint') });
         return;
       }
 
       setActionState({ kind: 'prepare_mint', collectionId });
-      setNotice({ tone: 'info', message: 'Preparing metadata and mint payload…' });
+      setNotice({ tone: 'info', message: t('hooks.useInventoryData.preparingMint') });
 
       try {
         const result = await prepareCollectionMint(token, collectionId);
@@ -268,13 +270,13 @@ export function useInventoryData(): UseInventoryDataResult {
         setGuidedCollectionId(collectionId);
         setGuidedStage('mint');
         await loadInventory(token);
-        setNotice({ tone: 'success', message: 'Mint preparation completed and token URI attached.' });
+        setNotice({ tone: 'success', message: t('hooks.useInventoryData.mintPrepCompleted') });
       } catch (requestError) {
         setConversionState((current) => ({
           ...current,
           mintStatus: 'failed',
         }));
-        setNotice({ tone: 'error', message: toReadableError(requestError, 'Prepare Mint failed.') });
+        setNotice({ tone: 'error', message: toReadableError(requestError, t('hooks.useInventoryData.prepareMintFailed')) });
       } finally {
         setActionState(null);
       }
@@ -284,33 +286,33 @@ export function useInventoryData(): UseInventoryDataResult {
 
   const viewTokenUriForItem = useCallback(async (tokenUri?: string) => {
     if (!tokenUri) {
-      setNotice({ tone: 'error', message: 'No token URI is available for this collectible yet.' });
+      setNotice({ tone: 'error', message: t('hooks.useInventoryData.noTokenUri') });
       return;
     }
 
     if (/^https?:\/\//i.test(tokenUri)) {
       window.open(tokenUri, '_blank', 'noopener,noreferrer');
-      setNotice({ tone: 'success', message: 'Token URI opened in a new tab.' });
+      setNotice({ tone: 'success', message: t('hooks.useInventoryData.tokenUriOpened') });
       return;
     }
 
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(tokenUri);
-        setNotice({ tone: 'success', message: 'Token URI copied to clipboard.' });
+        setNotice({ tone: 'success', message: t('hooks.useInventoryData.tokenUriCopied') });
         return;
       }
     } catch {
       // fall through to inline notice below
     }
 
-    setNotice({ tone: 'info', message: `Token URI: ${tokenUri}` });
+    setNotice({ tone: 'info', message: t('hooks.useInventoryData.tokenUriLabel', { uri: tokenUri }) });
   }, []);
 
   const uploadCollection = useCallback(
     async (file: File) => {
       if (!token) {
-        setNotice({ tone: 'error', message: 'Paste a test JWT before uploading a collectible image.' });
+        setNotice({ tone: 'error', message: t('hooks.useInventoryData.noTokenUpload') });
         return;
       }
 
@@ -323,7 +325,7 @@ export function useInventoryData(): UseInventoryDataResult {
         cardStatus: 'idle',
         mintStatus: 'idle',
       });
-      setNotice({ tone: 'info', message: 'Uploading collectible image and starting AI identification…' });
+      setNotice({ tone: 'info', message: t('hooks.useInventoryData.uploading') });
 
       try {
         const response = await uploadCollectionImage(token, file);
@@ -335,7 +337,7 @@ export function useInventoryData(): UseInventoryDataResult {
         }));
         setGuidedCollectionId(response.collection_id);
 
-        const createdItem = await pollCollectionUntilStored(token, response.collection_id);
+        const createdItem = await pollCollectionUntilStored(token, response.collection_id, t);
         setConversionState((current) => ({
           ...current,
           aiStatus: createdItem.status === 'failed' ? 'failed' : 'stored',
@@ -345,14 +347,14 @@ export function useInventoryData(): UseInventoryDataResult {
 
         await loadInventory(token);
         setGuidedStage(createdItem.status === 'failed' ? 'upload' : 'review');
-        setNotice({ tone: 'success', message: 'Collection uploaded and AI identification completed.' });
+        setNotice({ tone: 'success', message: t('hooks.useInventoryData.uploadSuccess') });
       } catch (requestError) {
         setConversionState((current) => ({
           ...current,
           uploadStatus: 'failed',
           aiStatus: 'failed',
         }));
-        setNotice({ tone: 'error', message: toReadableError(requestError, 'Upload failed.') });
+        setNotice({ tone: 'error', message: toReadableError(requestError, t('hooks.useInventoryData.uploadFailed')) });
       } finally {
         setActionState(null);
       }
@@ -363,12 +365,12 @@ export function useInventoryData(): UseInventoryDataResult {
   const oneClickConvert = useCallback(
     async (collectionId: number) => {
       if (!token) {
-        setNotice({ tone: 'error', message: 'Paste a test JWT before running one-click convert.' });
+        setNotice({ tone: 'error', message: t('hooks.useInventoryData.noTokenOneClick') });
         return;
       }
 
       setActionState({ kind: 'one_click_convert', collectionId });
-      setNotice({ tone: 'info', message: 'Running one-click convert through card generation and mint prep…' });
+      setNotice({ tone: 'info', message: t('hooks.useInventoryData.oneClickRunning') });
       setConversionState((current) => ({
         ...current,
         collectionId,
@@ -378,7 +380,7 @@ export function useInventoryData(): UseInventoryDataResult {
 
       try {
         await generateCollectionCard(token, collectionId, DEFAULT_STYLE_PROMPT);
-        const cardStatus = await pollCardStatus(token, collectionId);
+        const cardStatus = await pollCardStatus(token, collectionId, t);
         setConversionState((current) => ({
           ...current,
           cardStatus: toInventoryCardStatus(cardStatus.card_generation_status),
@@ -393,13 +395,13 @@ export function useInventoryData(): UseInventoryDataResult {
         }));
         setGuidedStage('mint');
         await loadInventory(token);
-        setNotice({ tone: 'success', message: 'One-click conversion completed through mint preparation.' });
+        setNotice({ tone: 'success', message: t('hooks.useInventoryData.oneClickSuccess') });
       } catch (requestError) {
         setConversionState((current) => ({
           ...current,
           mintStatus: 'failed',
         }));
-        setNotice({ tone: 'error', message: toReadableError(requestError, 'One-click conversion failed.') });
+        setNotice({ tone: 'error', message: toReadableError(requestError, t('hooks.useInventoryData.oneClickFailed')) });
       } finally {
         setActionState(null);
       }
@@ -423,12 +425,12 @@ export function useInventoryData(): UseInventoryDataResult {
       },
     ) => {
       if (!token) {
-        setNotice({ tone: 'error', message: 'Paste a test JWT before saving collection metadata.' });
+        setNotice({ tone: 'error', message: t('hooks.useInventoryData.noTokenSave') });
         return;
       }
 
       setActionState({ kind: 'refresh', collectionId });
-      setNotice({ tone: 'info', message: 'Saving reviewed metadata to the collection…' });
+      setNotice({ tone: 'info', message: t('hooks.useInventoryData.savingMetadata') });
 
       try {
         const updated = await updateCollection(token, collectionId, payload);
@@ -442,9 +444,9 @@ export function useInventoryData(): UseInventoryDataResult {
         setGuidedCollectionId(collectionId);
         setGuidedStage('card');
         await loadInventory(token);
-        setNotice({ tone: 'success', message: 'Metadata saved. You can now continue to card generation.' });
+        setNotice({ tone: 'success', message: t('hooks.useInventoryData.metadataSaved') });
       } catch (requestError) {
-        setNotice({ tone: 'error', message: toReadableError(requestError, 'Saving metadata failed.') });
+        setNotice({ tone: 'error', message: toReadableError(requestError, t('hooks.useInventoryData.saveMetadataFailed')) });
       } finally {
         setActionState(null);
       }
@@ -500,7 +502,7 @@ export function useInventoryData(): UseInventoryDataResult {
   );
 }
 
-async function pollCardStatus(token: string, collectionId: number): Promise<BackendCardStatusResponse> {
+async function pollCardStatus(token: string, collectionId: number, t: (key: string) => string): Promise<BackendCardStatusResponse> {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < CARD_POLL_TIMEOUT_MS) {
@@ -512,10 +514,10 @@ async function pollCardStatus(token: string, collectionId: number): Promise<Back
     await new Promise((resolve) => window.setTimeout(resolve, CARD_POLL_INTERVAL_MS));
   }
 
-  throw new Error('Timed out while waiting for card generation to finish.');
+  throw new Error(t('hooks.useInventoryData.cardPollTimeout'));
 }
 
-async function pollCollectionUntilStored(token: string, collectionId: number): Promise<InventoryItemViewModel> {
+async function pollCollectionUntilStored(token: string, collectionId: number, t: (key: string) => string): Promise<InventoryItemViewModel> {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < COLLECTION_POLL_TIMEOUT_MS) {
@@ -531,7 +533,7 @@ async function pollCollectionUntilStored(token: string, collectionId: number): P
     await new Promise((resolve) => window.setTimeout(resolve, COLLECTION_POLL_INTERVAL_MS));
   }
 
-  throw new Error('Timed out while waiting for AI identification to finish.');
+  throw new Error(t('hooks.useInventoryData.collectionPollTimeout'));
 }
 
 function toReadableError(error: unknown, fallback: string): string {

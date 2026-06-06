@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import InventorySectionFrame from './InventorySectionFrame';
 import type { InventoryDataSource, InventoryItemViewModel } from '../../types/inventory';
 
@@ -10,16 +11,17 @@ export default function InventoryTradingOverview({
   item,
   dataSource,
 }: InventoryTradingOverviewProps) {
+  const { t } = useTranslation();
   const checklist = [
-    { label: 'Card Generated', active: Boolean(item?.hasGeneratedCard) },
-    { label: 'Mint Prepared', active: Boolean(item?.hasMintPrep) },
-    { label: 'NFT Linked', active: Boolean(item?.nftId) },
-    { label: 'Minted', active: item?.status === 'minted' || item?.status === 'shipped' },
+    { label: t('tradingOverview.cardGenerated'), active: Boolean(item?.hasGeneratedCard) },
+    { label: t('tradingOverview.mintPrepared'), active: Boolean(item?.hasMintPrep) },
+    { label: t('tradingOverview.nftLinked'), active: Boolean(item?.nftId) },
+    { label: t('tradingOverview.minted'), active: item?.status === 'minted' || item?.status === 'shipped' },
   ];
 
   return (
     <InventorySectionFrame
-      title="NFT Trading Console"
+      title={t('tradingOverview.title')}
       rightAdornment={
         <div className="rounded-full border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-100/80">
           {dataSource.toUpperCase()}
@@ -30,7 +32,7 @@ export default function InventoryTradingOverview({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
         <div className="rounded-[1.5rem] border border-cyan-400/15 bg-[#071523]/75 p-5">
           <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-            Selected NFT Asset
+            {t('tradingOverview.selectedNftAsset')}
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-white">
             {item?.name ?? '—'}
@@ -46,7 +48,7 @@ export default function InventoryTradingOverview({
                   {item.cardStatusLabel}
                 </span>
                 <span className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-fuchsia-100">
-                  {item.nftId ? `NFT-${item.nftId}` : 'NFT Pending'}
+                  {item.nftId ? `NFT-${item.nftId}` : t('tradingOverview.nftPending')}
                 </span>
               </>
             ) : null}
@@ -55,7 +57,7 @@ export default function InventoryTradingOverview({
 
         <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-5">
           <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-300/65">
-            Readiness Checklist
+            {t('tradingOverview.readinessChecklist')}
           </p>
           <div className="mt-4 space-y-3">
             {checklist.map((step) => (
@@ -71,7 +73,7 @@ export default function InventoryTradingOverview({
                       : 'border-white/10 bg-white/5 text-slate-400',
                   ].join(' ')}
                 >
-                  {step.active ? 'Ready' : 'Pending'}
+                  {step.active ? t('tradingOverview.ready') : t('tradingOverview.pending')}
                 </span>
               </div>
             ))}

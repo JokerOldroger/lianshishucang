@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import InventorySectionFrame from './InventorySectionFrame';
 import type { InventoryActionNotice, InventoryItemViewModel } from '../../types/inventory';
 
@@ -39,6 +40,7 @@ export default function InventoryCollectionEditor({
   onContinue,
   submitting,
 }: InventoryCollectionEditorProps) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<EditorFormState>({
     ipName: '',
     series: '',
@@ -70,18 +72,18 @@ export default function InventoryCollectionEditor({
   }, [selectedItem]);
 
   return (
-    <InventorySectionFrame title="Metadata Review" contentClassName="space-y-5">
+    <InventorySectionFrame title={t('collectionEditor.title')} contentClassName="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="IP Name" value={form.ipName} onChange={(value) => setForm((current) => ({ ...current, ipName: value }))} />
-        <Field label="Series" value={form.series} onChange={(value) => setForm((current) => ({ ...current, series: value }))} />
-        <Field label="Material" value={form.material} onChange={(value) => setForm((current) => ({ ...current, material: value }))} />
-        <Field label="Condition" value={form.condition} onChange={(value) => setForm((current) => ({ ...current, condition: value }))} />
-        <Field label="Dominant Colors" value={form.dominantColors} onChange={(value) => setForm((current) => ({ ...current, dominantColors: value }))} />
-        <Field label="Style Tags" value={form.styleTags} onChange={(value) => setForm((current) => ({ ...current, styleTags: value }))} />
+        <Field label={t('collectionEditor.ipName')} value={form.ipName} onChange={(value) => setForm((current) => ({ ...current, ipName: value }))} />
+        <Field label={t('collectionEditor.series')} value={form.series} onChange={(value) => setForm((current) => ({ ...current, series: value }))} />
+        <Field label={t('collectionEditor.material')} value={form.material} onChange={(value) => setForm((current) => ({ ...current, material: value }))} />
+        <Field label={t('collectionEditor.condition')} value={form.condition} onChange={(value) => setForm((current) => ({ ...current, condition: value }))} />
+        <Field label={t('collectionEditor.dominantColors')} value={form.dominantColors} onChange={(value) => setForm((current) => ({ ...current, dominantColors: value }))} />
+        <Field label={t('collectionEditor.styleTags')} value={form.styleTags} onChange={(value) => setForm((current) => ({ ...current, styleTags: value }))} />
       </div>
 
       <Field
-        label="Physical Location"
+        label={t('collectionEditor.physicalLocation')}
         value={form.physicalLocation}
         onChange={(value) => setForm((current) => ({ ...current, physicalLocation: value }))}
       />
@@ -92,7 +94,7 @@ export default function InventoryCollectionEditor({
           onClick={onBack}
           className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
         >
-          Back
+          {t('common.back')}
         </button>
         <button
           type="button"
@@ -123,14 +125,14 @@ export default function InventoryCollectionEditor({
               : 'border-cyan-300/20 bg-cyan-300/10 text-cyan-100 hover:-translate-y-0.5',
           ].join(' ')}
         >
-          {submitting ? 'Saving…' : 'Save Metadata'}
+          {submitting ? t('collectionEditor.saving') : t('collectionEditor.saveMetadata')}
         </button>
         <button
           type="button"
           onClick={onContinue}
           className="rounded-2xl border border-fuchsia-300/20 bg-fuchsia-300/10 px-4 py-3 text-base font-medium text-fuchsia-100 transition hover:-translate-y-0.5"
         >
-          Continue
+          {t('common.continue')}
         </button>
       </div>
 

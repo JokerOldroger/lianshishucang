@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, CloudUpload, CornerLeftUp, Sparkles } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import InventorySectionFrame from './InventorySectionFrame';
 import type {
   InventoryActionNotice,
@@ -32,6 +32,29 @@ export default function InventoryUploadPanel({
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (conversionState.uploadStatus !== 'uploading' && conversionState.uploadStatus !== 'uploaded') {
+      setPreviewUrl(null);
+    }
+  }, [conversionState.uploadStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  const handleFile = (file: File) => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(URL.createObjectURL(file));
+    void onUpload(file);
+  };
 
   const stages = [
     { key: 'upload' as const, label: t('upload.stageUpload') },
@@ -87,11 +110,11 @@ export default function InventoryUploadPanel({
             setIsDragging(false);
             const file = event.dataTransfer.files?.[0];
             if (file) {
-              void onUpload(file);
+              handleFile(file);
             }
           }}
           className={[
-            'rounded-[1.75rem] border border-dashed p-8 text-center transition',
+            'group rounded-[1.75rem] border border-dashed p-8 text-center transition',
             isDragging
               ? 'border-cyan-300/40 bg-cyan-300/8 shadow-[0_0_24px_rgba(34,211,238,0.18)]'
               : 'border-cyan-400/15 bg-[#071523]/75 hover:border-cyan-300/25',
@@ -105,25 +128,49 @@ export default function InventoryUploadPanel({
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) {
-                void onUpload(file);
+                handleFile(file);
               }
             }}
           />
 
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
-            <CloudUpload size={28} />
-          </div>
-          <h3 className="mt-5 text-2xl font-semibold text-white">{t('upload.dropZone')}</h3>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              inputRef.current?.click();
-            }}
-            className="mt-5 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-base font-medium text-cyan-100"
-          >
-            {t('upload.chooseImage')}
-          </button>
+          {previewUrl ? (
+            <div className="relative">
+              <img
+                src={previewUrl}
+                alt=""
+                className="max-h-48 w-full rounded-xl object-contain"
+              />
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    inputRef.current?.click();
+                  }}
+                  className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-base font-medium text-cyan-100"
+                >
+                  {t('upload.chooseImage')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                <CloudUpload size={28} />
+              </div>
+              <h3 className="mt-5 text-2xl font-semibold text-white">{t('upload.dropZone')}</h3>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  inputRef.current?.click();
+                }}
+                className="mt-5 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-base font-medium text-cyan-100"
+              >
+                {t('upload.chooseImage')}
+              </button>
+            </>
+          )}
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">

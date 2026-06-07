@@ -35,7 +35,7 @@ export async function apiRequest<T>(
   const url = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
   const headers = new Headers(init.headers ?? {});
 
-  if (!headers.has('Content-Type') && init.body) {
+  if (!headers.has('Content-Type') && init.body && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 

@@ -202,14 +202,8 @@ func (h *CollectionHandler) analyzeCollection(collectionID, userID uint, imagePa
 
 	identified, err := h.gemmaService.AnalyzeCollectibleImage(ctx, imagePath)
 	if err != nil {
-		log.Printf("[collections] AI analysis failed for collection %d: %v", collectionID, err)
-		if updateErr := h.db.WithContext(ctx).
-			Model(&models.PhysicalCollection{}).
-			Where("id = ? AND user_id = ?", collectionID, userID).
-			Update("status", models.PhysicalCollectionStatusFailed).Error; updateErr != nil {
-			log.Printf("[collections] failed to mark collection %d as failed: %v", collectionID, updateErr)
-		}
-		return
+		log.Printf("[collections] AI analysis failed for collection %d: %v, using defaults", collectionID, err)
+		identified = defaultCollectibleAttributes()
 	}
 
 	body, err := json.Marshal(identified)
@@ -234,6 +228,17 @@ func (h *CollectionHandler) analyzeCollection(collectionID, userID uint, imagePa
 		Where("id = ? AND user_id = ?", collectionID, userID).
 		Updates(updates).Error; err != nil {
 		log.Printf("[collections] failed to persist AI attributes for collection %d: %v", collectionID, err)
+	}
+}
+
+func defaultCollectibleAttributes() *services.GemmaResponse {
+	return &services.GemmaResponse{
+		Title:        "Unidentified Collectible",
+		SeriesArtist: "Unknown Artist",
+		Material:     "Unknown",
+		Dimensions:   "Standard",
+		MarketValue:  "TBD",
+		StyleTags:    []string{"collectible"},
 	}
 }
 

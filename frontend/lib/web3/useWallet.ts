@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createWalletClient, custom, getAddress } from 'viem';
-import { sepolia, mainnet, localhost } from 'viem/chains';
-import { SUPPORTED_CHAIN_ID, CHAIN_CONFIG } from './config';
+import { sepolia, mainnet } from 'viem/chains';
+import { SUPPORTED_CHAIN_ID, CHAIN_CONFIG, hardhatLocal } from './config';
 
 const CHAIN_MAP: Record<number, typeof sepolia> = {
   1: mainnet as unknown as typeof sepolia,
   11155111: sepolia,
-  31337: localhost as unknown as typeof sepolia,
+  31337: hardhatLocal as unknown as typeof sepolia,
 };
 
 export interface WalletState {

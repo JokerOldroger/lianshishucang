@@ -354,7 +354,8 @@
     "mintStage": "Mint Stage",
     "tokenUri": "Token URI",
     "viewTokenUri": "View Token URI",
-    "openNftPrep": "Open NFT Prep"
+    "openNftPrep": "Open NFT Prep",
+    "connectWallet": "Please connect wallet first"
   },
   "hooks": {
     "useInventoryData": {

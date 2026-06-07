@@ -354,7 +354,8 @@
     "mintStage": "铸造阶段",
     "tokenUri": "Token URI",
     "viewTokenUri": "查看Token URI",
-    "openNftPrep": "打开NFT准备"
+    "openNftPrep": "打开NFT准备",
+    "connectWallet": "请先连接钱包"
   },
   "hooks": {
     "useInventoryData": {

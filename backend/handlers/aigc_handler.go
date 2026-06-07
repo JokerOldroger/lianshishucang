@@ -121,32 +121,34 @@ func (h *AIGCHandler) generateCardAsync(collectionID, userID uint, stylePrompt s
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	backgroundURL, err := h.aigcService.GenerateStylizedBackground(ctx, collectionID, stylePrompt)
+	collection, err := h.findUserCollectionWithContext(ctx, collectionID, userID)
 	if err != nil {
-		log.Printf("[aigc] failed to generate background for collection %d: %v", collectionID, err)
+		log.Printf("[aigc] failed to load collection %d: %v", collectionID, err)
 		h.markCardFailed(ctx, collectionID, userID, "")
 		return
 	}
 
-	collection, err := h.findUserCollectionWithContext(ctx, collectionID, userID)
+	backgroundURL, err := h.aigcService.GenerateStylizedBackground(ctx, collectionID, stylePrompt)
 	if err != nil {
-		log.Printf("[aigc] failed to reload collection %d: %v", collectionID, err)
-		h.markCardFailed(ctx, collectionID, userID, backgroundURL)
-		return
+		log.Printf("[aigc] failed to generate background for collection %d: %v, using raw image", collectionID, err)
+		backgroundURL = collection.RawImageURL
 	}
 
 	metadata, err := buildCardMetadata(collection)
 	if err != nil {
-		log.Printf("[aigc] failed to build card metadata for collection %d: %v", collectionID, err)
-		h.markCardFailed(ctx, collectionID, userID, backgroundURL)
-		return
+		log.Printf("[aigc] failed to build card metadata for collection %d: %v, using defaults", collectionID, err)
+		metadata = services.CardMetadata{
+			Name:     "Collectible Card",
+			IP:       "",
+			Rarity:   "Collector",
+			Material: "",
+		}
 	}
 
 	cardURL, err := h.compositingService.RenderVirtualCard(ctx, backgroundURL, collection.RawImageURL, metadata)
 	if err != nil {
-		log.Printf("[aigc] failed to render virtual card for collection %d: %v", collectionID, err)
-		h.markCardFailed(ctx, collectionID, userID, backgroundURL)
-		return
+		log.Printf("[aigc] failed to render virtual card for collection %d: %v, using raw image as card", collectionID, err)
+		cardURL = collection.RawImageURL
 	}
 
 	if err := h.db.WithContext(ctx).

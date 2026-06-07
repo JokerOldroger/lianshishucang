@@ -105,7 +105,11 @@ export default function InventoryPage() {
   const [mintNotice, setMintNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
 
   const handleMintNFT = useCallback(async () => {
-    if (!selectedItem?.tokenUri || !wallet.address) {
+    if (!selectedItem?.tokenUri) {
+      return;
+    }
+    if (!wallet.address) {
+      setMintNotice({ tone: 'error', message: t('mint.connectWallet') });
       return;
     }
     setMintNotice({ tone: 'info', message: t('mint.mintingOnChain') });
@@ -330,28 +334,54 @@ export default function InventoryPage() {
               ) : null}
 
               {guidedStage === 'mint' ? (
-                <InventorySectionFrame title={t('mint.mintStage')} contentClassName="space-y-4">
-                  <div className="rounded-[1.35rem] border border-cyan-400/12 bg-[#08131f]/75 p-4">
-                    <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-cyan-300/65 sm:text-[13px]">{t('mint.tokenUri')}</p>
-                    <p className="mt-3 break-all text-lg font-medium text-white">{conversionState.tokenUri ?? '—'}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => conversionState.tokenUri && void viewTokenUriForItem(conversionState.tokenUri)}
-                      className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-base font-medium text-cyan-100 transition hover:-translate-y-0.5"
-                    >
-                      {t('mint.viewTokenUri')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveBusinessSection('prep')}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
-                    >
-                      {t('mint.openNftPrep')}
-                    </button>
-                  </div>
-                </InventorySectionFrame>
+                <>
+                  <InventorySectionFrame title={t('mint.mintStage')} contentClassName="space-y-4">
+                    <div className="rounded-[1.35rem] border border-cyan-400/12 bg-[#08131f]/75 p-4">
+                      <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-cyan-300/65 sm:text-[13px]">{t('mint.tokenUri')}</p>
+                      <p className="mt-3 break-all text-lg font-medium text-white">{conversionState.tokenUri ?? '—'}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => conversionState.tokenUri && void viewTokenUriForItem(conversionState.tokenUri)}
+                        className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-base font-medium text-cyan-100 transition hover:-translate-y-0.5"
+                      >
+                        {t('mint.viewTokenUri')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveBusinessSection('prep')}
+                        className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base font-medium text-slate-200 transition hover:border-cyan-300/20 hover:text-white"
+                      >
+                        {t('mint.openNftPrep')}
+                      </button>
+                    </div>
+                    {mintNotice ? (
+                      <div className={[
+                        'rounded-2xl border px-4 py-3 text-base',
+                        mintNotice.tone === 'success'
+                          ? 'border-emerald-300/20 bg-emerald-300/8 text-emerald-100'
+                          : mintNotice.tone === 'error'
+                            ? 'border-rose-300/20 bg-rose-300/8 text-rose-100'
+                            : 'border-cyan-300/20 bg-cyan-300/8 text-cyan-100',
+                      ].join(' ')}>
+                        {mintNotice.message}
+                      </div>
+                    ) : null}
+                  </InventorySectionFrame>
+                  <InventoryMintPrepPanel
+                    selectedItem={selectedItem}
+                    onRefresh={() => void refresh()}
+                    onGenerateCard={(collectionId) => void generateCardForItem(collectionId)}
+                    onPrepareMint={(collectionId) => void prepareMintForItem(collectionId)}
+                    onViewTokenUri={(tokenUri) => void viewTokenUriForItem(tokenUri)}
+                    onMintNFT={handleMintNFT}
+                    actionState={actionState}
+                    notice={notice}
+                    dataSource={dataSource}
+                    wallet={wallet}
+                  />
+                </>
               ) : null}
             </div>
           ) : null}

@@ -7,7 +7,7 @@ import {
   http,
   type Address,
 } from 'viem';
-import { sepolia, mainnet, localhost } from 'viem/chains';
+import { sepolia, mainnet } from 'viem/chains';
 import { NFT_ABI, MARKETPLACE_ABI, AUCTION_ABI, ERC721_ABI } from './abi';
 import {
   NFT_CONTRACT_ADDRESS,
@@ -15,12 +15,13 @@ import {
   AUCTION_CONTRACT_ADDRESS,
   SUPPORTED_CHAIN_ID,
   CHAIN_CONFIG,
+  hardhatLocal,
 } from './config';
 
 const CHAIN_MAP: Record<number, typeof sepolia> = {
   1: mainnet as unknown as typeof sepolia,
   11155111: sepolia,
-  31337: localhost as unknown as typeof sepolia,
+  31337: hardhatLocal as unknown as typeof sepolia,
 };
 
 function getClients() {

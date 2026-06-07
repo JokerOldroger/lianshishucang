@@ -10,14 +10,10 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.User{},
 		&models.NFTMetadata{},
 		&models.PhysicalCollection{},
-		&models.StorageCabinet{},
-		&models.StorageInventoryItem{},
-		&models.TelemetryLog{},
-		&models.DiagnosticRecord{},
+
 		&models.NFT{},
 		&models.Listing{},
 		&models.Offer{},
-		&models.Auction{},
 		&models.Transaction{},
 		&models.Activity{},
 	)

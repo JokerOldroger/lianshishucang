@@ -169,20 +169,6 @@ func (s *IPFSService) buildMetadata(ctx context.Context, collection *models.Phys
 		appendTrait("Style Tag", t)
 	}
 
-	var inventoryItems []models.StorageInventoryItem
-	if err := s.db.WithContext(ctx).
-		Where("physical_collection_id = ?", collection.ID).
-		Find(&inventoryItems).Error; err == nil {
-		for _, item := range inventoryItems {
-			var tags []string
-			if err := json.Unmarshal(item.MaterialTags, &tags); err == nil {
-				for _, tag := range tags {
-					appendTrait("Material Tag", tag)
-				}
-			}
-		}
-	}
-
 	descriptionParts := []string{"Physical collectible with AIGC virtual card."}
 	if attrs.IPName != "" {
 		descriptionParts = append(descriptionParts, "IP: "+attrs.IPName+".")

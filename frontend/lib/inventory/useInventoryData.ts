@@ -4,7 +4,6 @@ import { ApiError } from '../api/client';
 import { clearStoredInventoryToken, getStoredInventoryToken, storeInventoryToken } from '../api/auth';
 import {
   generateCollectionCard,
-  getCabinetCommands,
   getCollectionCardStatus,
   getCollections,
   prepareCollectionMint,
@@ -12,12 +11,10 @@ import {
   uploadCollectionImage,
 } from '../api/inventory';
 import {
-  adaptCabinetCommandsToCabinet,
   adaptCardStatusIntoItem,
   adaptCollectionDetailPatch,
   adaptCollectionToInventoryItem,
   buildInventoryDashboardData,
-  deriveCabinetCodeFromLocation,
   toInventoryCardStatus,
 } from './adapters';
 import { inventoryDemoData } from '../../data/inventoryDemoData';
@@ -119,42 +116,10 @@ export function useInventoryData(): UseInventoryDataResult {
       const response = await getCollections(authToken);
       const items = response.collections.map(adaptCollectionToInventoryItem);
 
-      const uniqueCabinetCodes = Array.from(
-        new Set(
-          items
-            .map((item) => deriveCabinetCodeFromLocation(item.physicalLocation))
-            .filter((value): value is string => Boolean(value)),
-        ),
-      );
-
-      const cabinetResponses = await Promise.all(
-        uniqueCabinetCodes.map(async (cabinetCode) => {
-          try {
-            return await getCabinetCommands(cabinetCode);
-          } catch {
-            return null;
-          }
-        }),
-      );
-
-      const cabinets = cabinetResponses
-        .map((commands, index) => {
-          if (!commands) {
-            return null;
-          }
-          return adaptCabinetCommandsToCabinet(commands, items, index + 1);
-        })
-        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
-
-      const nextData: InventoryDashboardData = {
-        ...buildInventoryDashboardData(items),
-        cabinets,
-        telemetry: [],
-        diagnostics: [],
-      };
+      const nextData = buildInventoryDashboardData(items);
 
       setData(nextData);
-      setDataSource(cabinets.length ? 'mixed' : 'backend');
+      setDataSource('backend');
     } catch (requestError) {
       setData(inventoryDemoData);
       setDataSource('demo');
@@ -201,9 +166,6 @@ export function useInventoryData(): UseInventoryDataResult {
         return {
           ...current,
           ...buildInventoryDashboardData(nextItems),
-          cabinets: current.cabinets,
-          telemetry: current.telemetry,
-          diagnostics: current.diagnostics,
         };
       });
     },

@@ -8,11 +8,10 @@ import {
   type Address,
 } from 'viem';
 import { sepolia, mainnet } from 'viem/chains';
-import { NFT_ABI, MARKETPLACE_ABI, AUCTION_ABI, ERC721_ABI } from './abi';
+import { NFT_ABI, MARKETPLACE_ABI, ERC721_ABI } from './abi';
 import {
   NFT_CONTRACT_ADDRESS,
   MARKETPLACE_CONTRACT_ADDRESS,
-  AUCTION_CONTRACT_ADDRESS,
   SUPPORTED_CHAIN_ID,
   CHAIN_CONFIG,
   hardhatLocal,
@@ -228,44 +227,6 @@ export function useContractWrite() {
     [],
   );
 
-  const cancelAuction = useCallback(
-    async (auctionId: number): Promise<`0x${string}`> => {
-      const clients = getClients();
-      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
-      const { walletClient, publicClient } = clients;
-      const accounts = await walletClient.requestAddresses();
-      const hash = await walletClient.writeContract({
-        address: AUCTION_CONTRACT_ADDRESS as Address,
-        abi: AUCTION_ABI,
-        functionName: 'cancelAuction',
-        args: [BigInt(auctionId)],
-        account: accounts[0],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    },
-    [],
-  );
-
-  const claimRefund = useCallback(
-    async (auctionId: number): Promise<`0x${string}`> => {
-      const clients = getClients();
-      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
-      const { walletClient, publicClient } = clients;
-      const accounts = await walletClient.requestAddresses();
-      const hash = await walletClient.writeContract({
-        address: AUCTION_CONTRACT_ADDRESS as Address,
-        abi: AUCTION_ABI,
-        functionName: 'claimRefund',
-        args: [BigInt(auctionId)],
-        account: accounts[0],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    },
-    [],
-  );
-
   const getOffersForToken = useCallback(
     async (tokenId: number): Promise<any[]> => {
       const clients = getClients();
@@ -281,26 +242,6 @@ export function useContractWrite() {
         return result as any[];
       } catch {
         return [];
-      }
-    },
-    [],
-  );
-
-  const getRefundAmount = useCallback(
-    async (auctionId: number, bidder: string): Promise<bigint> => {
-      const clients = getClients();
-      if (!clients) return 0n;
-      const { publicClient } = clients;
-      try {
-        const result = await publicClient.readContract({
-          address: AUCTION_CONTRACT_ADDRESS as Address,
-          abi: AUCTION_ABI,
-          functionName: 'getRefundAmount',
-          args: [BigInt(auctionId), bidder as Address],
-        });
-        return result as bigint;
-      } catch {
-        return 0n;
       }
     },
     [],
@@ -326,97 +267,6 @@ export function useContractWrite() {
     [],
   );
 
-  const createAuction = useCallback(
-    async (
-      nftContract: string,
-      tokenId: number,
-      startPriceWei: string,
-      reservePriceWei: string,
-      startTime: number,
-      endTime: number,
-    ): Promise<`0x${string}`> => {
-      const clients = getClients();
-      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
-      const { walletClient, publicClient } = clients;
-      const accounts = await walletClient.requestAddresses();
-      const hash = await walletClient.writeContract({
-        address: AUCTION_CONTRACT_ADDRESS as Address,
-        abi: AUCTION_ABI,
-        functionName: 'createAuction',
-        args: [
-          nftContract as Address,
-          BigInt(tokenId),
-          BigInt(startPriceWei),
-          BigInt(reservePriceWei),
-          BigInt(startTime),
-          BigInt(endTime),
-        ],
-        account: accounts[0],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    },
-    [],
-  );
-
-  const placeBid = useCallback(
-    async (auctionId: number, valueWei: string): Promise<`0x${string}`> => {
-      const clients = getClients();
-      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
-      const { walletClient, publicClient } = clients;
-      const accounts = await walletClient.requestAddresses();
-      const hash = await walletClient.writeContract({
-        address: AUCTION_CONTRACT_ADDRESS as Address,
-        abi: AUCTION_ABI,
-        functionName: 'placeBid',
-        args: [BigInt(auctionId)],
-        value: BigInt(valueWei),
-        account: accounts[0],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    },
-    [],
-  );
-
-  const endAuction = useCallback(
-    async (auctionId: number): Promise<`0x${string}`> => {
-      const clients = getClients();
-      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
-      const { walletClient, publicClient } = clients;
-      const accounts = await walletClient.requestAddresses();
-      const hash = await walletClient.writeContract({
-        address: AUCTION_CONTRACT_ADDRESS as Address,
-        abi: AUCTION_ABI,
-        functionName: 'endAuction',
-        args: [BigInt(auctionId)],
-        account: accounts[0],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    },
-    [],
-  );
-
-  const settleAuction = useCallback(
-    async (auctionId: number): Promise<`0x${string}`> => {
-      const clients = getClients();
-      if (!clients) throw new Error(i18n.t('common.walletNotConnected'));
-      const { walletClient, publicClient } = clients;
-      const accounts = await walletClient.requestAddresses();
-      const hash = await walletClient.writeContract({
-        address: AUCTION_CONTRACT_ADDRESS as Address,
-        abi: AUCTION_ABI,
-        functionName: 'settleAuction',
-        args: [BigInt(auctionId)],
-        account: accounts[0],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    },
-    [],
-  );
-
   return {
     mintNFT,
     createListing,
@@ -428,14 +278,7 @@ export function useContractWrite() {
     createOffer,
     cancelOffer,
     acceptOffer,
-    createAuction,
-    placeBid,
-    endAuction,
-    settleAuction,
-    cancelAuction,
-    claimRefund,
     getOffersForToken,
-    getRefundAmount,
     getListingByToken,
   };
 }

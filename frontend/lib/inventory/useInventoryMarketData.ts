@@ -2,21 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   InventoryItemViewModel,
-  InventoryMarketAuctionViewModel,
   InventoryMarketData,
   InventoryMarketListingViewModel,
   InventoryMarketNftViewModel,
 } from '../../types/inventory';
 import { ApiError } from '../api/client';
 import {
-  getAuctions,
   getMarketplaceListings,
   getMyCreatedNFTs,
   getMyOwnedNFTs,
   getNFT,
 } from '../api/inventory';
 import {
-  adaptAuctionToMarketAuctionViewModel,
   adaptBackendNFTToDetailViewModel,
   adaptListingToMarketListingViewModel,
   buildInventoryMarketSummary,
@@ -24,15 +21,12 @@ import {
 
 const EMPTY_MARKET_DATA: InventoryMarketData = {
   listings: [],
-  auctions: [],
   selectedNft: null,
   summary: {
     activeListings: 0,
-    activeAuctions: 0,
     ownedNfts: 0,
     createdNfts: 0,
     selectedItemListed: false,
-    selectedItemInAuction: false,
   },
 };
 
@@ -64,15 +58,13 @@ export function useInventoryMarketData(
     setError(null);
 
     const listingsPromise = getMarketplaceListings(token, { page: 1, pageSize: 8 });
-    const auctionsPromise = getAuctions(token, { page: 1, pageSize: 8, status: 'active' });
     const ownedPromise = getMyOwnedNFTs(token, { page: 1, pageSize: 1 });
     const createdPromise = getMyCreatedNFTs(token, { page: 1, pageSize: 1 });
     const selectedNftPromise = selectedItem?.nftId ? getNFT(token, selectedItem.nftId) : Promise.resolve(null);
 
-    const [listingsResult, auctionsResult, ownedResult, createdResult, selectedNftResult] =
+    const [listingsResult, ownedResult, createdResult, selectedNftResult] =
       await Promise.allSettled([
         listingsPromise,
-        auctionsPromise,
         ownedPromise,
         createdPromise,
         selectedNftPromise,
@@ -82,13 +74,6 @@ export function useInventoryMarketData(
       listingsResult.status === 'fulfilled'
         ? listingsResult.value.listings.map((listing) =>
             adaptListingToMarketListingViewModel(listing, selectedItem?.nftId),
-          )
-        : [];
-
-    const auctions: InventoryMarketAuctionViewModel[] =
-      auctionsResult.status === 'fulfilled'
-        ? auctionsResult.value.auctions.map((auction) =>
-            adaptAuctionToMarketAuctionViewModel(auction, selectedItem?.nftId),
           )
         : [];
 
@@ -102,7 +87,6 @@ export function useInventoryMarketData(
 
     const summary = buildInventoryMarketSummary({
       listings,
-      auctions,
       ownedNfts,
       createdNfts,
       selectedNftId: selectedItem?.nftId,
@@ -110,12 +94,11 @@ export function useInventoryMarketData(
 
     setMarket({
       listings,
-      auctions,
       selectedNft,
       summary,
     });
 
-    const failures = [listingsResult, auctionsResult, ownedResult, createdResult, selectedNftResult].filter(
+    const failures = [listingsResult, ownedResult, createdResult, selectedNftResult].filter(
       (result) => result.status === 'rejected',
     );
 

@@ -27,7 +27,6 @@ type EventListener struct {
 
 	nftAddr         common.Address
 	marketplaceAddr common.Address
-	auctionAddr     common.Address
 
 	eventTopics map[string]common.Hash
 	eventArgs   map[string]abi.Arguments
@@ -51,7 +50,6 @@ func NewEventListener(cfg *config.Config, db *gorm.DB) (*EventListener, error) {
 		cfg:             cfg,
 		nftAddr:         common.HexToAddress(cfg.NFTContract),
 		marketplaceAddr: common.HexToAddress(cfg.Marketplace),
-		auctionAddr:     common.HexToAddress(cfg.AuctionContract),
 		eventTopics:     make(map[string]common.Hash),
 		eventArgs:       make(map[string]abi.Arguments),
 		pollInterval:    5 * time.Second,
@@ -85,26 +83,6 @@ func NewEventListener(cfg *config.Config, db *gorm.DB) (*EventListener, error) {
 	el.registerEvent("OfferAccepted",
 		"OfferAccepted(uint256,uint256,address,address,address,uint256)",
 		[]string{"address seller", "address bidder", "uint256 price"},
-	)
-	el.registerEvent("AuctionCreated",
-		"AuctionCreated(uint256,uint256,address,address,uint256,uint256,uint256,uint256)",
-		[]string{"address seller", "uint256 startPrice", "uint256 reservePrice", "uint256 startTime", "uint256 endTime"},
-	)
-	el.registerEvent("BidPlaced",
-		"BidPlaced(uint256,address,uint256)",
-		[]string{"address bidder", "uint256 amount"},
-	)
-	el.registerEvent("AuctionEnded",
-		"AuctionEnded(uint256,address,uint256)",
-		[]string{"address winner", "uint256 winningBid"},
-	)
-	el.registerEvent("AuctionCancelled",
-		"AuctionCancelled(uint256)",
-		nil,
-	)
-	el.registerEvent("AuctionSettled",
-		"AuctionSettled(uint256,address,address,uint256,uint256,uint256)",
-		[]string{"address seller", "address winner", "uint256 finalPrice", "uint256 platformFee", "uint256 creatorRoyalty"},
 	)
 
 	return el, nil
@@ -186,15 +164,6 @@ func (l *EventListener) processRange(ctx context.Context, from, to uint64) {
 			"OfferAccepted":    "OfferAccepted",
 		})
 	}
-	if l.cfg.AuctionContract != "" {
-		l.processContractEvents(ctx, l.auctionAddr, from, to, map[string]string{
-			"AuctionCreated":   "AuctionCreated",
-			"BidPlaced":        "BidPlaced",
-			"AuctionEnded":     "AuctionEnded",
-			"AuctionCancelled": "AuctionCancelled",
-			"AuctionSettled":   "AuctionSettled",
-		})
-	}
 }
 
 func (l *EventListener) processContractEvents(ctx context.Context, addr common.Address, from, to uint64, eventNames map[string]string) {
@@ -241,16 +210,6 @@ func (l *EventListener) handleLog(addr common.Address, vLog types.Log) {
 			l.handleListingCancelled(vLog)
 		case "ItemSold":
 			l.handleItemSold(vLog)
-		case "AuctionCreated":
-			l.handleAuctionCreated(vLog)
-		case "BidPlaced":
-			l.handleBidPlaced(vLog)
-		case "AuctionEnded":
-			l.handleAuctionEnded(vLog)
-		case "AuctionCancelled":
-			l.handleAuctionCancelled(vLog)
-		case "AuctionSettled":
-			l.handleAuctionSettled(vLog)
 		}
 		return
 	}
@@ -441,12 +400,6 @@ func (l *EventListener) handleItemSold(vLog types.Log) {
 		}).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&models.StorageInventoryItem{}).Where("physical_collection_id IN (?)", tx.Model(&models.PhysicalCollection{}).Select("id").Where("nft_id = ?", nft.ID)).Updates(map[string]interface{}{
-			"user_id":          buyer.ID,
-			"inventory_status": "PENDING_DELIVERY_INSTRUCTION",
-		}).Error; err != nil {
-			return err
-		}
 		txLog := &models.Transaction{
 			TxHash: vLog.TxHash.Hex(),
 			FromID: nft.OwnerID,
@@ -464,120 +417,6 @@ func (l *EventListener) handleItemSold(vLog types.Log) {
 	}
 	log.Printf("[event_listener] ItemSold: listingID=%d tokenID=%d buyer=%s", listingID, tokenID, buyerAddr.Hex())
 	l.logActivity(&nft.ID, buyer.ID, "purchase", "price: "+price+" wei", vLog.TxHash.Hex())
-}
-
-func (l *EventListener) handleAuctionCreated(vLog types.Log) {
-	data, _ := l.unpackEvent("AuctionCreated", vLog.Data)
-	auctionID := vLog.Topics[1].Big().Uint64()
-	tokenID := vLog.Topics[2].Big().Uint64()
-
-	var startPrice, reservePrice string
-	if data != nil {
-		if v, ok := data["startPrice"].(*big.Int); ok {
-			startPrice = v.String()
-		}
-		if v, ok := data["reservePrice"].(*big.Int); ok {
-			reservePrice = v.String()
-		}
-	}
-
-	var sellerAddr common.Address
-	if data != nil {
-		sellerAddr, _ = data["seller"].(common.Address)
-	}
-	seller, _ := l.findOrCreateUser(sellerAddr)
-	var nft models.NFT
-	if err := l.db.Where("token_id = ? AND contract_address = ?", tokenID, l.cfg.NFTContract).First(&nft).Error; err != nil {
-		return
-	}
-
-	auction := models.Auction{
-		AuctionID:    auctionID,
-		NFTID:        nft.ID,
-		SellerID:     seller.ID,
-		StartPrice:   startPrice,
-		ReservePrice: reservePrice,
-		Status:       "pending",
-	}
-	l.db.Create(&auction)
-	log.Printf("[event_listener] AuctionCreated: auctionID=%d tokenID=%d", auctionID, tokenID)
-}
-
-func (l *EventListener) handleBidPlaced(vLog types.Log) {
-	data, _ := l.unpackEvent("BidPlaced", vLog.Data)
-	auctionID := vLog.Topics[1].Big().Uint64()
-
-	var bidderAddr common.Address
-	var amount string
-	if data != nil {
-		bidderAddr, _ = data["bidder"].(common.Address)
-		if v, ok := data["amount"].(*big.Int); ok {
-			amount = v.String()
-		}
-	}
-
-	bidder, _ := l.findOrCreateUser(bidderAddr)
-
-	l.db.Model(&models.Auction{}).Where("auction_id = ?", auctionID).Updates(map[string]interface{}{
-		"highest_bid":       amount,
-		"highest_bidder_id": bidder.ID,
-		"status":            "active",
-	})
-	log.Printf("[event_listener] BidPlaced: auctionID=%d bidder=%s", auctionID, bidderAddr.Hex())
-}
-
-func (l *EventListener) handleAuctionEnded(vLog types.Log) {
-	auctionID := vLog.Topics[1].Big().Uint64()
-	l.db.Model(&models.Auction{}).Where("auction_id = ?", auctionID).Update("status", "ended")
-	log.Printf("[event_listener] AuctionEnded: auctionID=%d", auctionID)
-}
-
-func (l *EventListener) handleAuctionCancelled(vLog types.Log) {
-	auctionID := vLog.Topics[1].Big().Uint64()
-	l.db.Model(&models.Auction{}).Where("auction_id = ?", auctionID).Update("status", "cancelled")
-	log.Printf("[event_listener] AuctionCancelled: auctionID=%d", auctionID)
-}
-
-func (l *EventListener) handleAuctionSettled(vLog types.Log) {
-	data, _ := l.unpackEvent("AuctionSettled", vLog.Data)
-	auctionID := vLog.Topics[1].Big().Uint64()
-
-	var winnerAddr common.Address
-	var finalPrice string
-	if data != nil {
-		winnerAddr, _ = data["winner"].(common.Address)
-		if v, ok := data["finalPrice"].(*big.Int); ok {
-			finalPrice = v.String()
-		}
-	}
-
-	winner, _ := l.findOrCreateUser(winnerAddr)
-
-	var auction models.Auction
-	if err := l.db.Where("auction_id = ?", auctionID).First(&auction).Error; err != nil {
-		return
-	}
-
-	l.db.Transaction(func(tx *gorm.DB) error {
-		tx.Model(&models.Auction{}).Where("id = ?", auction.ID).Updates(map[string]interface{}{
-			"status":      "settled",
-			"winner_id":   winner.ID,
-			"final_price": finalPrice,
-		})
-		tx.Model(&models.NFT{}).Where("id = ?", auction.NFTID).Update("owner_id", winner.ID)
-		txLog := &models.Transaction{
-			TxHash: vLog.TxHash.Hex(),
-			FromID: auction.SellerID,
-			ToID:   winner.ID,
-			NFTID:  &auction.NFTID,
-			Type:   "auction_purchase",
-			Amount: finalPrice,
-			Status: "confirmed",
-		}
-		return tx.Create(txLog).Error
-	})
-	log.Printf("[event_listener] AuctionSettled: auctionID=%d winner=%s", auctionID, winnerAddr.Hex())
-	l.logActivity(&auction.NFTID, winner.ID, "auction_won", "final_price: "+finalPrice+" wei", vLog.TxHash.Hex())
 }
 
 func (l *EventListener) logActivity(nftID *uint, userID uint, action, detail, txHash string) {

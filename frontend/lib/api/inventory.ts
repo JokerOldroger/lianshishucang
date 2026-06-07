@@ -1,11 +1,7 @@
 import { apiRequest } from './client';
 import type {
-  BackendAuction,
-  BackendAuctionListResponse,
-  BackendCabinetCommandsResponse,
   BackendCardStatusResponse,
   BackendCollectionListResponse,
-  BackendDiagnosticResponse,
   BackendGenerateCardResponse,
   BackendMarketplaceListingListResponse,
   BackendNFT,
@@ -84,40 +80,6 @@ export async function prepareCollectionMint(token: string, collectionId: number)
   );
 }
 
-export async function getCabinetCommands(cabinetCode: string) {
-  return apiRequest<BackendCabinetCommandsResponse>(
-    `/api/v1/hw/commands/${encodeURIComponent(cabinetCode)}`,
-    { method: 'GET' },
-  );
-}
-
-export async function diagnoseCabinet(token: string, cabinetId: number) {
-  return apiRequest<BackendDiagnosticResponse>(
-    `/api/v1/storage/cabinets/${cabinetId}/diagnose`,
-    { method: 'POST' },
-    { token },
-  );
-}
-
-export async function applyCabinetSettings(
-  token: string,
-  cabinetId: number,
-  payload: {
-    diagnostic_record_id?: number;
-    target_temp?: number;
-    target_humidity?: number;
-  },
-) {
-  return apiRequest<{ cabinet: unknown; message: string }>(
-    `/api/v1/storage/cabinets/${cabinetId}/apply-settings`,
-    {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    },
-    { token },
-  );
-}
-
 export async function getNFT(token: string, nftId: number) {
   return apiRequest<BackendNFT>(`/api/v1/nfts/${nftId}`, { method: 'GET' }, { token });
 }
@@ -170,22 +132,4 @@ export async function getMarketplaceListings(
   );
 }
 
-export async function getAuctions(
-  token: string,
-  params: { page?: number; pageSize?: number; status?: string } = {},
-) {
-  const searchParams = new URLSearchParams({
-    page: String(params.page ?? 1),
-    page_size: String(params.pageSize ?? 20),
-  });
 
-  if (params.status) {
-    searchParams.set('status', params.status);
-  }
-
-  return apiRequest<BackendAuctionListResponse>(
-    `/api/v1/auctions?${searchParams.toString()}`,
-    { method: 'GET' },
-    { token },
-  );
-}

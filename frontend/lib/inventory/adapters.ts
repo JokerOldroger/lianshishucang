@@ -5,20 +5,16 @@ import {
   STATUS_LABELS,
 } from './constants';
 import type {
-  BackendAuction,
-  BackendCabinetCommandsResponse,
   BackendCardStatusResponse,
   BackendMarketplaceListing,
   BackendNFT,
   BackendPhysicalCollection,
   BackendUserSummary,
   InventoryAttribute,
-  InventoryCabinetViewModel,
   InventoryCardStatus,
   InventoryDashboardData,
   InventoryItemViewModel,
   InventoryLifecycleStatus,
-  InventoryMarketAuctionViewModel,
   InventoryMarketListingViewModel,
   InventoryMarketNftViewModel,
   InventoryMarketSummary,
@@ -172,26 +168,6 @@ export function adaptCardStatusIntoItem(
   });
 }
 
-export function adaptCabinetCommandsToCabinet(
-  response: BackendCabinetCommandsResponse,
-  items: InventoryItemViewModel[],
-  fallbackId = 1,
-): InventoryCabinetViewModel {
-  return {
-    id: fallbackId,
-    cabinetCode: response.cabinet_code,
-    status: response.status,
-    targetTemp: response.target_temp,
-    targetHumidity: response.target_humidity,
-    tecCoolingActive: response.tec_cooling_active,
-    atomizerActive: response.atomizer_active,
-    itemCount: items.filter(
-      (item) => deriveCabinetCodeFromLocation(item.physicalLocation) === response.cabinet_code,
-    ).length,
-    updatedAt: response.updated_at,
-  };
-}
-
 export function adaptBackendNFTToDetailViewModel(
   nft: BackendNFT,
 ): InventoryMarketNftViewModel {
@@ -228,63 +204,20 @@ export function adaptListingToMarketListingViewModel(
   };
 }
 
-export function adaptAuctionToMarketAuctionViewModel(
-  auction: BackendAuction,
-  selectedNftId?: number,
-): InventoryMarketAuctionViewModel {
-  return {
-    id: String(auction.id),
-    auctionId: String(auction.auction_id ?? auction.id),
-    nftId: auction.nft_id ?? auction.nft?.id,
-    title: auction.nft?.name?.trim() || i18n.t('adapters.untitledAuction'),
-    imageUrl: resolveTradingImage(auction.nft?.image),
-    sellerLabel: formatWalletLabel(auction.seller),
-    startPriceWei: auction.start_price_wei || '0',
-    reservePriceWei: auction.reserve_price_wei || '0',
-    highestBidWei: auction.highest_bid_wei || '0',
-    startPriceEthLabel: formatWeiToEthLabel(auction.start_price_wei || '0'),
-    highestBidEthLabel: formatWeiToEthLabel(auction.highest_bid_wei || '0'),
-    status: startCase(auction.status || 'active'),
-    endTime: auction.end_time,
-    timeStateLabel: formatTimeStateLabel(auction.end_time),
-    isSelectedItemMatch: Boolean(selectedNftId) && (auction.nft_id ?? auction.nft?.id) === selectedNftId,
-  };
-}
-
 export function buildInventoryMarketSummary(input: {
   listings: InventoryMarketListingViewModel[];
-  auctions: InventoryMarketAuctionViewModel[];
   ownedNfts: number;
   createdNfts: number;
   selectedNftId?: number;
 }): InventoryMarketSummary {
   return {
     activeListings: input.listings.length,
-    activeAuctions: input.auctions.length,
     ownedNfts: input.ownedNfts,
     createdNfts: input.createdNfts,
     selectedItemListed: Boolean(
       input.selectedNftId && input.listings.some((listing) => listing.nftId === input.selectedNftId),
     ),
-    selectedItemInAuction: Boolean(
-      input.selectedNftId && input.auctions.some((auction) => auction.nftId === input.selectedNftId),
-    ),
   };
-}
-
-export function deriveCabinetCodeFromLocation(location?: string): string | undefined {
-  if (!location) {
-    return undefined;
-  }
-
-  const normalized = location.trim().toUpperCase();
-  const directMatch = normalized.match(/([A-Z]-\d{2})/);
-  if (directMatch) {
-    return directMatch[1];
-  }
-
-  const cabinetMatch = normalized.match(/CABINET\s+([A-Z]-\d{2})/);
-  return cabinetMatch?.[1];
 }
 
 export function buildInventoryStats(items: InventoryItemViewModel[]): InventoryStats {
@@ -300,9 +233,7 @@ export function buildInventoryStats(items: InventoryItemViewModel[]): InventoryS
   };
 }
 
-export function buildInventoryDashboardData(
-  items: InventoryItemViewModel[],
-): InventoryDashboardData {
+export function buildInventoryDashboardData(items: InventoryItemViewModel[]): InventoryDashboardData {
   return {
     items,
     stats: buildInventoryStats(items),

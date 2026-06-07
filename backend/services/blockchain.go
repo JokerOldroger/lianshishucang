@@ -21,18 +21,16 @@ type BlockchainService struct {
 	fromAddress       common.Address
 	nftABI            abi.ABI
 	marketplaceABI    abi.ABI
-	auctionABI        abi.ABI
 	nftAddress        common.Address
 	marketplaceAddress common.Address
-	auctionAddress    common.Address
 }
 
 func NewBlockchainService(
 	rpcURL string,
 	chainID int64,
 	privateKeyHex string,
-	nftABIStr, marketplaceABIStr, auctionABIStr string,
-	nftAddr, marketplaceAddr, auctionAddr string,
+	nftABIStr, marketplaceABIStr string,
+	nftAddr, marketplaceAddr string,
 ) (*BlockchainService, error) {
 	client, err := ethclient.Dial(rpcURL)
 	if err != nil {
@@ -45,11 +43,6 @@ func NewBlockchainService(
 	}
 
 	marketplaceABI, err := abi.JSON(strings.NewReader(marketplaceABIStr))
-	if err != nil {
-		return nil, err
-	}
-
-	auctionABI, err := abi.JSON(strings.NewReader(auctionABIStr))
 	if err != nil {
 		return nil, err
 	}
@@ -71,10 +64,8 @@ func NewBlockchainService(
 		fromAddress:        fromAddr,
 		nftABI:             nftABI,
 		marketplaceABI:     marketplaceABI,
-		auctionABI:         auctionABI,
 		nftAddress:         common.HexToAddress(nftAddr),
 		marketplaceAddress: common.HexToAddress(marketplaceAddr),
-		auctionAddress:     common.HexToAddress(auctionAddr),
 	}, nil
 }
 
@@ -88,10 +79,6 @@ func (s *BlockchainService) GetNFTAddress() common.Address {
 
 func (s *BlockchainService) GetMarketplaceAddress() common.Address {
 	return s.marketplaceAddress
-}
-
-func (s *BlockchainService) GetAuctionAddress() common.Address {
-	return s.auctionAddress
 }
 
 func (s *BlockchainService) sendTransaction(to common.Address, data []byte, value *big.Int) (*types.Transaction, error) {

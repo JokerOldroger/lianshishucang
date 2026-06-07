@@ -85,28 +85,6 @@ type Offer struct {
 	Bidder     User      `gorm:"foreignKey:BidderID" json:"bidder,omitempty"`
 }
 
-type Auction struct {
-	ID              uint      `gorm:"primaryKey" json:"id"`
-	AuctionID       uint64    `gorm:"uniqueIndex;not null" json:"auction_id"`
-	NFTID           uint      `gorm:"index;not null" json:"nft_id"`
-	SellerID        uint      `gorm:"index;not null" json:"seller_id"`
-	StartPrice      string    `gorm:"size:78;not null" json:"start_price_wei"`
-	ReservePrice    string    `gorm:"size:78;not null" json:"reserve_price_wei"`
-	HighestBid      string    `gorm:"size:78;default:0" json:"highest_bid_wei"`
-	HighestBidderID *uint     `json:"highest_bidder_id"`
-	StartTime       time.Time `json:"start_time"`
-	EndTime         time.Time `json:"end_time"`
-	Status          string    `gorm:"size:20;default:pending" json:"status"`
-	WinnerID        *uint     `json:"winner_id"`
-	FinalPrice      string    `gorm:"size:78" json:"final_price_wei"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
-	NFT             NFT       `gorm:"foreignKey:NFTID" json:"nft,omitempty"`
-	Seller          User      `gorm:"foreignKey:SellerID" json:"seller,omitempty"`
-	HighestBidder   *User     `gorm:"foreignKey:HighestBidderID" json:"highest_bidder,omitempty"`
-	Winner          *User     `gorm:"foreignKey:WinnerID" json:"winner,omitempty"`
-}
-
 type Transaction struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	TxHash    string    `gorm:"size:66;index" json:"tx_hash"`

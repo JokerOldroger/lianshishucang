@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 
 interface InventoryBusinessTabsProps {
-  activeTab: 'collection' | 'trading' | 'storage';
-  onChange: (tab: 'collection' | 'trading' | 'storage') => void;
+  activeTab: 'collection' | 'trading';
+  onChange: (tab: 'collection' | 'trading') => void;
 }
 
 export default function InventoryBusinessTabs({
@@ -18,10 +18,6 @@ export default function InventoryBusinessTabs({
     {
       key: 'trading' as const,
       label: t('nav.nftTrading'),
-    },
-    {
-      key: 'storage' as const,
-      label: t('nav.storage'),
     },
   ];
   return (

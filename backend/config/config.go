@@ -15,7 +15,6 @@ type Config struct {
 	ChainID           int64
 	NFTContract       string
 	Marketplace       string
-	AuctionContract   string
 	PlatformFeeBps    uint64
 	FeeRecipient      string
 	GemmaAPIURL       string
@@ -45,7 +44,6 @@ func Load() *Config {
 		ChainID:           getEnvInt("CHAIN_ID", 11155111),
 		NFTContract:       getEnv("NFT_CONTRACT", ""),
 		Marketplace:       getEnv("MARKETPLACE_CONTRACT", ""),
-		AuctionContract:   getEnv("AUCTION_CONTRACT", ""),
 		PlatformFeeBps:    getEnvUint("PLATFORM_FEE_BPS", 250),
 		FeeRecipient:      getEnv("FEE_RECIPIENT", "0x0000000000000000000000000000000000000000"),
 		GemmaAPIURL:       getEnv("GEMMA_API_URL", ""),

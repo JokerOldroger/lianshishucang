@@ -23,16 +23,11 @@ export type InventoryActionKind =
   | 'create_listing'
   | 'update_price'
   | 'place_bid'
-  | 'end_auction'
-  | 'settle_auction'
-  | 'cancel_auction'
-  | 'claim_refund'
   | 'approve_nft'
   | 'approve_all'
   | 'create_offer'
   | 'cancel_offer'
-  | 'accept_offer'
-  | 'create_auction';
+  | 'accept_offer';
 export type InventoryNoticeTone = 'info' | 'success' | 'error';
 
 export type InventoryFilterStatus = 'all' | InventoryLifecycleStatus;
@@ -85,42 +80,9 @@ export interface InventoryStats {
   generating: number;
 }
 
-export interface InventoryCabinetViewModel {
-  id: number;
-  cabinetCode: string;
-  status: string;
-  targetTemp: number;
-  targetHumidity: number;
-  tecCoolingActive: boolean;
-  atomizerActive: boolean;
-  itemCount: number;
-  updatedAt?: string;
-}
-
-export interface InventoryTelemetryViewModel {
-  cabinetId: number;
-  currentTemp: number;
-  currentHumidity: number;
-  recordedAt: string;
-}
-
-export interface InventoryDiagnosticViewModel {
-  id: number;
-  cabinetId: number;
-  collectionId?: number;
-  humanAdvice: string;
-  appliedTemp: number;
-  appliedHumidity: number;
-  riskLevel: string;
-  appliedAt?: string;
-}
-
 export interface InventoryDashboardData {
   items: InventoryItemViewModel[];
   stats: InventoryStats;
-  cabinets?: InventoryCabinetViewModel[];
-  telemetry?: InventoryTelemetryViewModel[];
-  diagnostics?: InventoryDiagnosticViewModel[];
 }
 
 export interface InventoryUploadResult {
@@ -224,28 +186,6 @@ export interface BackendPrepareMintResponse {
   status: string;
 }
 
-export interface BackendCabinetCommandsResponse {
-  cabinet_code: string;
-  target_temp: number;
-  target_humidity: number;
-  tec_cooling_active: boolean;
-  atomizer_active: boolean;
-  status: string;
-  updated_at?: string;
-}
-
-export interface BackendDiagnosticResponse {
-  diagnostic_record_id: number;
-  cabinet_id: number;
-  collection_id?: number;
-  human_readable_advice: string;
-  recommended_target_temp: number;
-  recommended_humidity_cap: number;
-  risk_level: string;
-  telemetry_summary?: unknown;
-  material_tags?: unknown;
-}
-
 export interface BackendNFT {
   id: number;
   token_id?: number;
@@ -292,33 +232,7 @@ export interface BackendMarketplaceListingListResponse {
   page: number;
 }
 
-export interface BackendAuction {
-  id: number;
-  auction_id?: number;
-  nft_id?: number;
-  seller_id?: number;
-  start_price_wei?: string;
-  reserve_price_wei?: string;
-  highest_bid_wei?: string;
-  highest_bidder_id?: number;
-  start_time?: string;
-  end_time?: string;
-  status?: string;
-  winner_id?: number;
-  final_price_wei?: string;
-  created_at?: string;
-  updated_at?: string;
-  nft?: BackendNFT | null;
-  seller?: BackendUserSummary;
-  highest_bidder?: BackendUserSummary | null;
-  winner?: BackendUserSummary | null;
-}
 
-export interface BackendAuctionListResponse {
-  auctions: BackendAuction[];
-  total: number;
-  page: number;
-}
 
 export interface InventoryMarketListingViewModel {
   id: string;
@@ -332,24 +246,6 @@ export interface InventoryMarketListingViewModel {
   priceEthLabel: string;
   status: string;
   createdAt?: string;
-  isSelectedItemMatch: boolean;
-}
-
-export interface InventoryMarketAuctionViewModel {
-  id: string;
-  auctionId: string;
-  nftId?: number;
-  title: string;
-  imageUrl: string;
-  sellerLabel: string;
-  startPriceWei: string;
-  reservePriceWei: string;
-  highestBidWei: string;
-  startPriceEthLabel: string;
-  highestBidEthLabel: string;
-  status: string;
-  endTime?: string;
-  timeStateLabel: string;
   isSelectedItemMatch: boolean;
 }
 
@@ -367,11 +263,9 @@ export interface InventoryMarketNftViewModel {
 
 export interface InventoryMarketSummary {
   activeListings: number;
-  activeAuctions: number;
   ownedNfts: number;
   createdNfts: number;
   selectedItemListed: boolean;
-  selectedItemInAuction: boolean;
 }
 
 export interface InventoryMarketOfferViewModel {
@@ -391,7 +285,6 @@ export interface InventoryMarketOfferViewModel {
 
 export interface InventoryMarketData {
   listings: InventoryMarketListingViewModel[];
-  auctions: InventoryMarketAuctionViewModel[];
   selectedNft: InventoryMarketNftViewModel | null;
   summary: InventoryMarketSummary;
 }

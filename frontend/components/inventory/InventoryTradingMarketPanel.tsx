@@ -2,13 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWallet } from '../../lib/web3/useWallet';
 import { useContractWrite } from '../../lib/web3/useContractWrite';
-import { NFT_CONTRACT_ADDRESS, MARKETPLACE_CONTRACT_ADDRESS, AUCTION_CONTRACT_ADDRESS } from '../../lib/web3/config';
+import { NFT_CONTRACT_ADDRESS, MARKETPLACE_CONTRACT_ADDRESS } from '../../lib/web3/config';
 import InventoryDetailPanel from './InventoryDetailPanel';
 import InventoryEmptyState from './InventoryEmptyState';
 import InventorySectionFrame from './InventorySectionFrame';
 import type {
   InventoryItemViewModel,
-  InventoryMarketAuctionViewModel,
   InventoryMarketData,
   InventoryMarketListingViewModel,
   InventoryMarketOfferViewModel,
@@ -36,9 +35,6 @@ export default function InventoryTradingMarketPanel({
   const [createListingOpen, setCreateListingOpen] = useState(false);
   const [listPriceEth, setListPriceEth] = useState('');
 
-  const [bidAuctionId, setBidAuctionId] = useState<number | null>(null);
-  const [bidAmountEth, setBidAmountEth] = useState('');
-
   const [updatePriceListingId, setUpdatePriceListingId] = useState<number | null>(null);
   const [updatePriceEth, setUpdatePriceEth] = useState('');
 
@@ -46,14 +42,8 @@ export default function InventoryTradingMarketPanel({
   const [offerPriceEth, setOfferPriceEth] = useState('');
   const [offerExpirationHours, setOfferExpirationHours] = useState('48');
 
-  const [showCreateAuction, setShowCreateAuction] = useState(false);
-  const [auctionStartPriceEth, setAuctionStartPriceEth] = useState('');
-  const [auctionReservePriceEth, setAuctionReservePriceEth] = useState('');
-  const [auctionDurationHours, setAuctionDurationHours] = useState('24');
-
   const [offers, setOffers] = useState<InventoryMarketOfferViewModel[]>([]);
   const [offersLoading, setOffersLoading] = useState(false);
-  const [refundAmounts, setRefundAmounts] = useState<Record<number, string>>({});
 
   const clearNotice = () => setActionNotice(null);
 
@@ -90,23 +80,6 @@ export default function InventoryTradingMarketPanel({
     }
   }, [selectedItem?.nftId, contract, wallet]);
 
-  const loadRefundAmounts = useCallback(async () => {
-    if (!wallet.address) return;
-    const amounts: Record<number, string> = {};
-    for (const auction of market.auctions) {
-      const aid = Number(auction.auctionId);
-      try {
-        const amt = await contract.getRefundAmount(aid, wallet.address);
-        if (amt > 0n) {
-          amounts[aid] = amt.toString();
-        }
-      } catch {
-        // skip
-      }
-    }
-    setRefundAmounts(amounts);
-  }, [market.auctions, wallet.address, contract]);
-
   useEffect(() => {
     if (selectedItem?.nftId) {
       void loadOffers();
@@ -114,10 +87,6 @@ export default function InventoryTradingMarketPanel({
       setOffers([]);
     }
   }, [selectedItem?.nftId, loadOffers]);
-
-  useEffect(() => {
-    void loadRefundAmounts();
-  }, [loadRefundAmounts]);
 
   const requireWallet = () => {
     if (!wallet.isConnected) {
@@ -203,60 +172,6 @@ export default function InventoryTradingMarketPanel({
     }
   };
 
-  const handlePlaceBid = async (auctionId: number) => {
-    if (!requireWallet() || !bidAmountEth) return;
-    const valueWei = BigInt(Math.floor(parseFloat(bidAmountEth) * 1e18)).toString();
-    setActionState(`bid-${auctionId}`);
-    setActionNotice({ tone: 'info' as const, message: t('marketPanel.confirmBid') });
-    try {
-      const hash = await contract.placeBid(auctionId, valueWei);
-      setActionNotice({ tone: 'success' as const, message: t('marketPanel.bidPlaced', { hash: hash.slice(0, 10) }) });
-      setBidAuctionId(null);
-      setBidAmountEth('');
-    } catch (err: unknown) {
-      setActionNotice({
-        tone: 'error' as const,
-        message: err instanceof Error ? err.message : t('marketPanel.bidFailed'),
-      });
-    } finally {
-      setActionState(null);
-    }
-  };
-
-  const handleEndAuction = async (auctionId: number) => {
-    if (!requireWallet()) return;
-    setActionState(`end-${auctionId}`);
-    setActionNotice({ tone: 'info' as const, message: t('marketPanel.confirmEndAuction') });
-    try {
-      const hash = await contract.endAuction(auctionId);
-      setActionNotice({ tone: 'success' as const, message: t('marketPanel.auctionEnded', { hash: hash.slice(0, 10) }) });
-    } catch (err: unknown) {
-      setActionNotice({
-        tone: 'error' as const,
-        message: err instanceof Error ? err.message : t('marketPanel.endAuctionFailed'),
-      });
-    } finally {
-      setActionState(null);
-    }
-  };
-
-  const handleSettleAuction = async (auctionId: number) => {
-    if (!requireWallet()) return;
-    setActionState(`settle-${auctionId}`);
-    setActionNotice({ tone: 'info' as const, message: t('marketPanel.confirmSettlement') });
-    try {
-      const hash = await contract.settleAuction(auctionId);
-      setActionNotice({ tone: 'success' as const, message: t('marketPanel.settled', { hash: hash.slice(0, 10) }) });
-    } catch (err: unknown) {
-      setActionNotice({
-        tone: 'error' as const,
-        message: err instanceof Error ? err.message : t('marketPanel.settlementFailed'),
-      });
-    } finally {
-      setActionState(null);
-    }
-  };
-
   const handleUpdatePrice = async (listingId: number) => {
     if (!requireWallet() || !updatePriceEth) return;
     const newPriceWei = BigInt(Math.floor(parseFloat(updatePriceEth) * 1e18)).toString();
@@ -335,78 +250,6 @@ export default function InventoryTradingMarketPanel({
     }
   };
 
-  const handleCreateAuction = async () => {
-    if (!requireWallet() || !selectedItem?.nftId) return;
-    const startPriceWei = BigInt(Math.floor(parseFloat(auctionStartPriceEth || '0') * 1e18)).toString();
-    const reservePriceWei = BigInt(Math.floor(parseFloat(auctionReservePriceEth || '0') * 1e18)).toString();
-    if (parseFloat(auctionStartPriceEth) <= 0) return;
-    const duration = parseInt(auctionDurationHours) || 24;
-    const startTime = Math.floor(Date.now() / 1000);
-    const endTime = startTime + duration * 3600;
-    setActionState('create-auction');
-    setActionNotice({ tone: 'info' as const, message: t('marketPanel.confirmCreateAuction') });
-    try {
-      const hash = await contract.createAuction(
-        NFT_CONTRACT_ADDRESS,
-        selectedItem.nftId,
-        startPriceWei,
-        reservePriceWei,
-        startTime,
-        endTime,
-      );
-      setActionNotice({ tone: 'success' as const, message: t('marketPanel.auctionCreated', { hash: hash.slice(0, 10) }) });
-      setShowCreateAuction(false);
-      setAuctionStartPriceEth('');
-      setAuctionReservePriceEth('');
-    } catch (err: unknown) {
-      setActionNotice({
-        tone: 'error' as const,
-        message: err instanceof Error ? err.message : t('marketPanel.createAuctionFailed'),
-      });
-    } finally {
-      setActionState(null);
-    }
-  };
-
-  const handleCancelAuction = async (auctionId: number) => {
-    if (!requireWallet()) return;
-    setActionState(`cancel-auction-${auctionId}`);
-    setActionNotice({ tone: 'info' as const, message: t('marketPanel.confirmCancelAuction') });
-    try {
-      const hash = await contract.cancelAuction(auctionId);
-      setActionNotice({ tone: 'success' as const, message: t('marketPanel.auctionCancelled', { hash: hash.slice(0, 10) }) });
-    } catch (err: unknown) {
-      setActionNotice({
-        tone: 'error' as const,
-        message: err instanceof Error ? err.message : t('marketPanel.cancelAuctionFailed'),
-      });
-    } finally {
-      setActionState(null);
-    }
-  };
-
-  const handleClaimRefund = async (auctionId: number) => {
-    if (!requireWallet()) return;
-    setActionState(`claim-refund-${auctionId}`);
-    setActionNotice({ tone: 'info' as const, message: t('marketPanel.confirmClaimRefund') });
-    try {
-      const hash = await contract.claimRefund(auctionId);
-      setActionNotice({ tone: 'success' as const, message: t('marketPanel.refundClaimed', { hash: hash.slice(0, 10) }) });
-      setRefundAmounts((prev) => {
-        const next = { ...prev };
-        delete next[auctionId];
-        return next;
-      });
-    } catch (err: unknown) {
-      setActionNotice({
-        tone: 'error' as const,
-        message: err instanceof Error ? err.message : t('marketPanel.claimRefundFailed'),
-      });
-    } finally {
-      setActionState(null);
-    }
-  };
-
   const handleSetApprovalForAll = async () => {
     if (!requireWallet()) return;
     setActionState('approve-all');
@@ -436,11 +279,6 @@ export default function InventoryTradingMarketPanel({
       active: market.summary.selectedItemListed,
     },
     {
-      label: t('marketPanel.inAuction'),
-      value: market.summary.selectedItemInAuction ? t('common.live') : t('common.no'),
-      active: market.summary.selectedItemInAuction,
-    },
-    {
       label: t('marketPanel.owner'),
       value: market.selectedNft?.ownerLabel ?? t('common.unavailable'),
       active: Boolean(market.selectedNft?.ownerLabel),
@@ -451,8 +289,7 @@ export default function InventoryTradingMarketPanel({
     Boolean(selectedItem?.nftId) &&
     wallet.isConnected &&
     wallet.isCorrectChain &&
-    !market.summary.selectedItemListed &&
-    !market.summary.selectedItemInAuction;
+    !market.summary.selectedItemListed;
 
   return (
     <div className="space-y-6">
@@ -475,7 +312,6 @@ export default function InventoryTradingMarketPanel({
       <InventorySectionFrame title={t('marketPanel.marketVisibility')} contentClassName="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <SummaryCard label={t('marketPanel.activeListings')} value={market.summary.activeListings} />
-          <SummaryCard label={t('marketPanel.activeAuctions')} value={market.summary.activeAuctions} />
           <SummaryCard label={t('marketPanel.myOwnedNfts')} value={market.summary.ownedNfts} />
           <SummaryCard label={t('marketPanel.myCreatedNfts')} value={market.summary.createdNfts} />
         </div>
@@ -599,76 +435,6 @@ export default function InventoryTradingMarketPanel({
                     </button>
                   </div>
                 ) : null}
-
-                <button
-                  type="button"
-                  disabled={market.summary.selectedItemInAuction || actionState === 'create-auction'}
-                  onClick={() => setShowCreateAuction(true)}
-                  className="rounded-xl border border-fuchsia-300/20 bg-fuchsia-300/8 px-4 py-3 text-base font-medium text-fuchsia-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/5 disabled:text-slate-500"
-                >
-                  {actionState === 'create-auction' ? t('marketPanel.creating') : t('marketPanel.createAuction')}
-                </button>
-
-                {showCreateAuction ? (
-                  <div className="flex w-full flex-wrap items-end gap-3">
-                    <label className="min-w-0 flex-[1_1_120px]">
-                      <span className="mb-1 block font-mono text-[11px] uppercase tracking-[0.24em] text-cyan-300/60">
-                        {t('marketPanel.startPriceEth')}
-                      </span>
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        value={auctionStartPriceEth}
-                        onChange={(e) => setAuctionStartPriceEth(e.target.value)}
-                        placeholder={t('marketPanel.pricePlaceholder')}
-                        className="w-full rounded-xl border border-cyan-400/15 bg-[#071523]/80 px-4 py-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45"
-                      />
-                    </label>
-                    <label className="min-w-0 flex-[1_1_120px]">
-                      <span className="mb-1 block font-mono text-[11px] uppercase tracking-[0.24em] text-cyan-300/60">
-                        {t('marketPanel.reservePriceEth')}
-                      </span>
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        value={auctionReservePriceEth}
-                        onChange={(e) => setAuctionReservePriceEth(e.target.value)}
-                        placeholder={t('marketPanel.pricePlaceholder')}
-                        className="w-full rounded-xl border border-cyan-400/15 bg-[#071523]/80 px-4 py-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45"
-                      />
-                    </label>
-                    <label className="min-w-0 flex-[1_1_100px]">
-                      <span className="mb-1 block font-mono text-[11px] uppercase tracking-[0.24em] text-cyan-300/60">
-                        {t('marketPanel.durationHrs')}
-                      </span>
-                      <input
-                        type="number"
-                        min="1"
-                        value={auctionDurationHours}
-                        onChange={(e) => setAuctionDurationHours(e.target.value)}
-                        placeholder={t('marketPanel.durationPlaceholder')}
-                        className="w-full rounded-xl border border-cyan-400/15 bg-[#071523]/80 px-4 py-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      disabled={!auctionStartPriceEth || parseFloat(auctionStartPriceEth) <= 0}
-                      onClick={handleCreateAuction}
-                      className="rounded-xl border border-emerald-300/20 bg-emerald-300/8 px-5 py-3 text-base font-medium text-emerald-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-white/5 disabled:text-slate-500"
-                    >
-                      {t('marketPanel.confirm')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setShowCreateAuction(false); setAuctionStartPriceEth(''); setAuctionReservePriceEth(''); }}
-                      className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-base font-medium text-slate-200 transition hover:border-rose-300/20 hover:bg-rose-300/8 hover:text-rose-100"
-                    >
-                      {t('marketPanel.cancel')}
-                    </button>
-                  </div>
-                ) : null}
               </div>
             ) : null}
 
@@ -713,18 +479,8 @@ export default function InventoryTradingMarketPanel({
                                 >
                                   {actionState === `cancel-offer-${idx}` ? t('marketPanel.cancellingOffer') : t('marketPanel.cancel')}
                                 </button>
-                              ) : null}
-                              {isOwner && !offer.isExpired ? (
-                                <button
-                                  type="button"
-                                  disabled={actionState === `accept-offer-${idx}`}
-                                  onClick={() => handleAcceptOffer(offer.nftContract, offer.tokenId, idx)}
-                                  className="rounded-xl border border-emerald-300/20 bg-emerald-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-emerald-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {actionState === `accept-offer-${idx}` ? t('marketPanel.accepting') : t('marketPanel.accept')}
-                                </button>
-                              ) : null}
-                            </div>
+                ) : null}
+              </div>
                           </div>
                         </div>
                       );
@@ -779,32 +535,6 @@ export default function InventoryTradingMarketPanel({
                   onOfferPriceEthChange={setOfferPriceEth}
                   offerExpirationHours={offerExpirationHours}
                   onOfferExpirationHoursChange={setOfferExpirationHours}
-                />
-              )}
-            />
-
-            <MarketListSection
-              title={t('marketPanel.auctionBoard')}
-              items={market.auctions}
-              emptyTitle={t('marketPanel.noActiveAuctions')}
-              emptyMessage={t('marketPanel.noActiveAuctionsMsg')}
-              renderItem={(item) => (
-                <AuctionCard
-                  key={item.id}
-                  item={item}
-                  actionState={actionState}
-                  bidAuctionId={bidAuctionId}
-                  bidAmountEth={bidAmountEth}
-                  wallet={wallet}
-                  refundWei={refundAmounts[Number(item.auctionId)]}
-                  onBidOpen={() => setBidAuctionId(Number(item.auctionId))}
-                  onBidClose={() => { setBidAuctionId(null); setBidAmountEth(''); }}
-                  onBidAmountChange={setBidAmountEth}
-                  onPlaceBid={() => handlePlaceBid(Number(item.auctionId))}
-                  onEndAuction={() => handleEndAuction(Number(item.auctionId))}
-                  onSettle={() => handleSettleAuction(Number(item.auctionId))}
-                  onCancelAuction={() => handleCancelAuction(Number(item.auctionId))}
-                  onClaimRefund={() => handleClaimRefund(Number(item.auctionId))}
                 />
               )}
             />
@@ -1048,163 +778,4 @@ function ListingCard({
   );
 }
 
-interface AuctionCardProps {
-  item: InventoryMarketAuctionViewModel;
-  actionState: string | null;
-  bidAuctionId: number | null;
-  bidAmountEth: string;
-  wallet: { isConnected: boolean; isCorrectChain: boolean; address: string };
-  refundWei?: string;
-  onBidOpen: () => void;
-  onBidClose: () => void;
-  onBidAmountChange: (val: string) => void;
-  onPlaceBid: () => void;
-  onEndAuction: () => void;
-  onSettle: () => void;
-  onCancelAuction?: () => void;
-  onClaimRefund?: () => void;
-}
 
-function AuctionCard({
-  item,
-  actionState,
-  bidAuctionId,
-  bidAmountEth,
-  wallet,
-  refundWei,
-  onBidOpen,
-  onBidClose,
-  onBidAmountChange,
-  onPlaceBid,
-  onEndAuction,
-  onSettle,
-  onCancelAuction,
-  onClaimRefund,
-}: AuctionCardProps) {
-  const { t } = useTranslation();
-  const isActive = item.status === 'active' || item.status === 'pending';
-  const isEnded = item.status === 'ended';
-  const aid = Number(item.auctionId);
-  const isBidding = bidAuctionId === aid;
-  const isOwn = wallet.isConnected && item.sellerLabel.toLowerCase().includes(wallet.address.toLowerCase().slice(2, 8));
-  const hasRefund = refundWei && BigInt(refundWei) > 0n;
-
-  return (
-    <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
-      <div className="flex gap-4">
-        <img src={item.imageUrl} alt={item.title} className="h-24 w-24 rounded-2xl object-cover" />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-xl font-medium text-white">{item.title}</p>
-              <p className="mt-1 text-base text-slate-300/70">{t('marketPanel.seller', { label: item.sellerLabel })}</p>
-            </div>
-            <span className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-fuchsia-100">
-              {item.status}
-            </span>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-200">
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-              {t('marketPanel.highest', { label: item.highestBidEthLabel })}
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-              {t('marketPanel.ends', { label: item.timeStateLabel })}
-            </span>
-            {item.isSelectedItemMatch ? (
-              <span className="rounded-full border border-yellow-300/20 bg-yellow-300/8 px-3 py-1 text-yellow-100">
-                {t('common.match')}
-              </span>
-            ) : null}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {isActive ? (
-              <>
-                {isOwn ? (
-                  <button
-                    type="button"
-                    disabled={actionState === `cancel-auction-${aid}`}
-                    onClick={onCancelAuction}
-                    className="rounded-xl border border-rose-300/15 bg-rose-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-rose-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {actionState === `cancel-auction-${aid}` ? t('marketPanel.cancelling') : t('marketPanel.cancelAuction')}
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  disabled={actionState === `end-${aid}`}
-                  onClick={onEndAuction}
-                  className="rounded-xl border border-yellow-300/15 bg-yellow-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-yellow-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {actionState === `end-${aid}` ? t('marketPanel.ending') : t('marketPanel.endAuction')}
-                </button>
-                {isBidding ? (
-                  <div className="flex w-full flex-wrap items-end gap-2">
-                    <label className="min-w-0 flex-1">
-                      <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-300/60">
-                        {t('marketPanel.bidEth')}
-                      </span>
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        value={bidAmountEth}
-                        onChange={(e) => onBidAmountChange(e.target.value)}
-                        placeholder={t('marketPanel.pricePlaceholder')}
-                        className="w-full rounded-xl border border-cyan-400/15 bg-[#071523]/80 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-300/45"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      disabled={!bidAmountEth || parseFloat(bidAmountEth) <= 0 || actionState === `bid-${aid}`}
-                      onClick={onPlaceBid}
-                      className="rounded-xl border border-emerald-300/20 bg-emerald-300/8 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-emerald-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {actionState === `bid-${aid}` ? t('marketPanel.bidding') : t('marketPanel.bid')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onBidClose}
-                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-slate-300 transition hover:border-rose-300/20 hover:bg-rose-300/8 hover:text-rose-100"
-                    >
-                      {t('marketPanel.cancel')}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={onBidOpen}
-                    className="rounded-xl border border-cyan-300/20 bg-cyan-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-100 transition hover:-translate-y-0.5"
-                  >
-                    {t('marketPanel.placeBid')}
-                  </button>
-                )}
-              </>
-            ) : null}
-            {isEnded ? (
-              <>
-                <button
-                  type="button"
-                  disabled={actionState === `settle-${aid}`}
-                  onClick={onSettle}
-                  className="rounded-xl border border-emerald-300/20 bg-emerald-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-emerald-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {actionState === `settle-${aid}` ? t('marketPanel.settling') : t('marketPanel.settle')}
-                </button>
-                {hasRefund ? (
-                  <button
-                    type="button"
-                    disabled={actionState === `claim-refund-${aid}`}
-                    onClick={onClaimRefund}
-                    className="rounded-xl border border-cyan-300/15 bg-cyan-300/8 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {actionState === `claim-refund-${aid}` ? t('marketPanel.claiming') : t('marketPanel.claimRefund')}
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

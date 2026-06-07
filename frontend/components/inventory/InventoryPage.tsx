@@ -7,7 +7,6 @@ import InventoryHeader from './InventoryHeader';
 import InventoryToolbar from './InventoryToolbar';
 import InventoryGrid from './InventoryGrid';
 import InventoryDetailPanel from './InventoryDetailPanel';
-import InventoryTelemetryPanel from './InventoryTelemetryPanel';
 import InventoryStatsSummary from './InventoryStatsSummary';
 import InventoryTradingMarketPanel from './InventoryTradingMarketPanel';
 import InventorySideRail from './InventorySideRail';
@@ -55,7 +54,7 @@ export default function InventoryPage() {
   } = useInventoryData();
 
   const [activeWorkspace, setActiveWorkspace] = useState<'wallet' | 'business'>('business');
-  const [activeBusinessSection, setActiveBusinessSection] = useState<'library' | 'upload' | 'prep' | 'market' | 'storage'>('library');
+  const [activeBusinessSection, setActiveBusinessSection] = useState<'library' | 'upload' | 'prep' | 'market'>('library');
   const [activeWalletSection, setActiveWalletSection] = useState<'access'>('access');
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -410,15 +409,6 @@ export default function InventoryPage() {
             />
           ) : null}
 
-          {activeWorkspace === 'business' && activeBusinessSection === 'storage' ? (
-            <InventoryTelemetryPanel
-              item={selectedItem}
-              cabinets={data.cabinets}
-              telemetry={data.telemetry}
-              diagnostics={data.diagnostics}
-              dataSource={dataSource}
-            />
-          ) : null}
         </div>
 
         <InventorySideRail

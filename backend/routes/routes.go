@@ -12,15 +12,14 @@ import (
 
 func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	var blockchainService *services.BlockchainService
-	if cfg.NFTContract != "" && cfg.Marketplace != "" && cfg.AuctionContract != "" {
+	if cfg.NFTContract != "" && cfg.Marketplace != "" {
 		bc, err := services.NewBlockchainService(
 			cfg.EthereumRPC,
 			cfg.ChainID,
 			"",
-			"", "", "",
+			"", "",
 			cfg.NFTContract,
 			cfg.Marketplace,
-			cfg.AuctionContract,
 		)
 		if err == nil {
 			blockchainService = bc
@@ -28,23 +27,16 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	}
 	nftService := services.NewNFTService(db, cfg, blockchainService)
 	marketplaceService := services.NewMarketplaceService(db, cfg, nftService)
-	auctionService := services.NewAuctionService(db, cfg, nftService)
 	gemmaService := services.NewGemmaService(cfg)
 	aigcService := services.NewAIGCService(db, cfg)
 	compositingService := services.NewCompositingService(cfg)
 	ipfsService := services.NewIPFSService(db, cfg)
-	storageService := services.NewStorageService(db)
-	diagnosticService := services.NewCabinetDiagnosticService(db, storageService, gemmaService)
-
 	authHandler := handlers.NewAuthHandler(db, cfg)
 	nftHandler := handlers.NewNFTHandler(db, cfg, nftService)
 	marketplaceHandler := handlers.NewMarketplaceHandler(db, cfg, marketplaceService)
-	auctionHandler := handlers.NewAuctionHandler(db, cfg, auctionService)
 	collectionHandler := handlers.NewCollectionHandler(db, cfg, gemmaService)
 	aigcHandler := handlers.NewAIGCHandler(db, cfg, aigcService, compositingService)
 	web3Handler := handlers.NewWeb3Handler(db, cfg, ipfsService)
-	hardwareHandler := handlers.NewHardwareHandler(storageService)
-	storageHandler := handlers.NewStorageHandler(storageService, diagnosticService)
 
 	public := r.Group("/api/v1")
 	{
@@ -55,8 +47,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			c.JSON(200, gin.H{"status": "ok", "service": "链识数藏"})
 		})
 
-		public.POST("/hw/telemetry", hardwareHandler.RecordTelemetry)
-		public.GET("/hw/commands/:cabinet_code", hardwareHandler.GetCabinetCommands)
 	}
 
 	protected := r.Group("/api/v1")
@@ -74,9 +64,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		protected.GET("/marketplace/listings", marketplaceHandler.ListListings)
 		protected.GET("/marketplace/listings/:id", marketplaceHandler.GetListing)
 
-		protected.GET("/auctions", auctionHandler.ListAuctions)
-		protected.GET("/auctions/:id", auctionHandler.GetAuction)
-
 		protected.POST("/collections/upload", collectionHandler.UploadAndIdentifyCollectible)
 		protected.GET("/collections", collectionHandler.ListCollections)
 		protected.GET("/collections/:id", collectionHandler.GetCollection)
@@ -85,7 +72,5 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		protected.GET("/collections/:id/card-status", aigcHandler.GetCardStatus)
 		protected.POST("/collections/:id/prepare-mint", web3Handler.PrepareMint)
 
-		protected.POST("/storage/cabinets/:id/diagnose", storageHandler.DiagnoseCabinet)
-		protected.POST("/storage/cabinets/:id/apply-settings", storageHandler.ApplySettings)
 	}
 }

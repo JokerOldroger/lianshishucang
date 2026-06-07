@@ -2,7 +2,6 @@ import {
   Boxes,
   ChartCandlestick,
   CloudUpload,
-  HardDrive,
   Sparkles,
   WalletMinimal,
 } from 'lucide-react';
@@ -10,8 +9,8 @@ import { useTranslation } from 'react-i18next';
 
 interface InventorySideRailProps {
   workspace: 'business' | 'wallet';
-  activeSection: 'library' | 'upload' | 'prep' | 'market' | 'storage' | 'access';
-  onChange: (section: 'library' | 'upload' | 'prep' | 'market' | 'storage' | 'access') => void;
+  activeSection: 'library' | 'upload' | 'prep' | 'market' | 'access';
+  onChange: (section: 'library' | 'upload' | 'prep' | 'market' | 'access') => void;
   collapsed: boolean;
   onToggle: () => void;
 }
@@ -29,7 +28,6 @@ export default function InventorySideRail({
     { key: 'upload' as const, label: t('nav.upload'), Icon: CloudUpload },
     { key: 'prep' as const, label: t('nav.nftPrep'), Icon: Sparkles },
     { key: 'market' as const, label: t('nav.market'), Icon: ChartCandlestick },
-    { key: 'storage' as const, label: t('nav.storage'), Icon: HardDrive },
   ];
   const walletItems = [{ key: 'access' as const, label: t('nav.access'), Icon: WalletMinimal }];
   const items = workspace === 'business' ? businessItems : walletItems;

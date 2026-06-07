@@ -9,9 +9,6 @@ export const NFT_CONTRACT_ADDRESS =
 export const MARKETPLACE_CONTRACT_ADDRESS =
   (import.meta.env.VITE_MARKETPLACE_CONTRACT as string) || '';
 
-export const AUCTION_CONTRACT_ADDRESS =
-  (import.meta.env.VITE_AUCTION_CONTRACT as string) || '';
-
 export const CHAIN_CONFIG: Record<number, { name: string; currency: string; rpc: string }> = {
   1: { name: i18n.t('config.mainnet'), currency: i18n.t('config.eth'), rpc: 'https://eth-mainnet.g.alchemy.com/v2/demo' },
   11155111: { name: i18n.t('config.sepolia'), currency: i18n.t('config.eth'), rpc: 'https://eth-sepolia.g.alchemy.com/v2/demo' },

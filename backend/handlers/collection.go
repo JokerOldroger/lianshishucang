@@ -197,12 +197,13 @@ func (h *CollectionHandler) UpdateCollection(c *gin.Context) {
 }
 
 func (h *CollectionHandler) analyzeCollection(collectionID, userID uint, imagePath string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
+	imageName := filepath.Base(imagePath)
 	identified, err := h.gemmaService.AnalyzeCollectibleImage(ctx, imagePath)
 	if err != nil {
-		log.Printf("[collections] AI analysis failed for collection %d: %v, using defaults", collectionID, err)
+		log.Printf("[ai] collection=%d image=%s provider=all result=failed error=%q using_defaults=true", collectionID, imageName, err)
 		identified = defaultCollectibleAttributes()
 	}
 
@@ -217,6 +218,8 @@ func (h *CollectionHandler) analyzeCollection(collectionID, userID uint, imagePa
 		}
 		return
 	}
+
+	log.Printf("[ai] collection=%d image=%s result=%s", collectionID, imageName, string(body))
 
 	updates := map[string]interface{}{
 		"name":       strings.TrimSpace(identified.Title),

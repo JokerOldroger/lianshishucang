@@ -18,7 +18,21 @@ import (
 	"github.com/lianshishucang/backend/config"
 )
 
-const gemmaSystemPrompt = "You are an expert appraiser for young people's trendy collectibles, including designer toys, action figures, Pop Mart figures, Bearbrick collectibles, Hot Toys figures, and sneakers. Analyze the provided collectible image and return ONLY a raw, minified JSON object with no markdown, no code fences, and no extra text. The JSON must exactly contain these keys: title, series_artist, material, dimensions, market_value, style_tags. style_tags must be an array of strings."
+const gemmaSystemPrompt = `You are a JSON generator for collectible appraisal. Your output must be ONLY valid JSON — no markdown, no code fences, no explanations, no greetings.
+
+Analyze the image and output EXACTLY this structure with real values:
+
+{"title":"","series_artist":"","material":"","dimensions":"","market_value":"","style_tags":[]}
+
+Field rules:
+- title: specific character/product name (e.g. "Son Goku Super Saiyan", "Mickey Mouse 1933", "Pikachu 1st Edition"). NEVER use generic descriptions like "action figure" or "collectible".
+- series_artist: brand or IP name (e.g. "Bandai", "Funko", "Hot Toys", "LEGO", "The Walt Disney Company", "The Pokemon Company")
+- material: main physical material (e.g. "PVC/ABS", "Vinyl", "Resin", "Cardboard", "Die-cast Metal", "Polyester", "Paper")
+- dimensions: size with unit (e.g. "15cm", "10cm x 8cm x 5cm", "3.75 inches", "1:6 scale")
+- market_value: price in USD with $ prefix (e.g. "$25", "$150-$300", "$15.99")
+- style_tags: array of 3-6 tags describing visual style, like ["anime","chibi","glow in the dark"] or ["realistic","vintage","limited edition","metal finish"]
+
+CRITICAL: Return NOTHING except the raw JSON. No introductory text. No trailing text. No code blocks. Just {"title":...}.`
 
 type GemmaResponse struct {
 	Title        string   `json:"title"`
@@ -134,7 +148,7 @@ func NewGemmaService(cfg *config.Config) *GemmaService {
 	return &GemmaService{
 		cfg: cfg,
 		httpClient: &http.Client{
-			Timeout: 45 * time.Second,
+			Timeout: 120 * time.Second,
 		},
 	}
 }
@@ -145,10 +159,29 @@ func (s *GemmaService) AnalyzeCollectibleImage(ctx context.Context, imagePath st
 	}
 
 	provider := strings.ToLower(strings.TrimSpace(os.Getenv("GEMMA_PROVIDER")))
-	if provider == "openrouter" {
+	switch provider {
+	case "openrouter":
 		return s.analyzeWithOpenRouter(ctx, imagePath)
+	case "lmstudio":
+		return s.analyzeWithLMStudio(ctx, imagePath)
 	}
-	return s.analyzeWithGoogle(ctx, imagePath)
+
+	// try Google AI Studio first
+	result, err := s.analyzeWithGoogle(ctx, imagePath)
+	if err == nil {
+		return result, nil
+	}
+	log.Printf("[gemma] Google AI failed: %v, trying LM Studio fallback", err)
+
+	// fallback to local LM Studio
+	lmResult, fallbackErr := s.analyzeWithLMStudio(ctx, imagePath)
+	if fallbackErr == nil {
+		log.Printf("[gemma] LM Studio fallback succeeded: title=%s", lmResult.Title)
+		return lmResult, nil
+	}
+	log.Printf("[gemma] LM Studio fallback also failed: %v", fallbackErr)
+
+	return nil, fmt.Errorf("all AI providers failed: Google(%v) LM Studio(%v)", err, fallbackErr)
 }
 
 func (s *GemmaService) analyzeWithGoogle(ctx context.Context, imagePath string) (*GemmaResponse, error) {
@@ -171,8 +204,8 @@ func (s *GemmaService) analyzeWithGoogle(ctx context.Context, imagePath string) 
 		SystemInstruction: geminiContent{Parts: []geminiPart{{Text: gemmaSystemPrompt}}},
 		Contents: []geminiContent{{
 			Parts: []geminiPart{
-				{Text: "Identify this collectible and return the JSON object now."},
 				{InlineData: &geminiInlineData{MimeType: mimeType, Data: base64.StdEncoding.EncodeToString(imageBytes)}},
+				{Text: "Analyze this collectible and return the JSON."},
 			},
 		}},
 		GenerationConfig: geminiGenerationConfig{Temperature: 0.2, ResponseMimeType: "application/json"},
@@ -200,8 +233,8 @@ func (s *GemmaService) analyzeWithGoogle(ctx context.Context, imagePath string) 
 	if err != nil {
 		return nil, fmt.Errorf("read Gemma response: %w", err)
 	}
+	log.Printf("[gemma] response status=%d body=%s", resp.StatusCode, string(respBody))
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		log.Printf("[gemma] non-2xx response status=%d body=%s", resp.StatusCode, string(respBody))
 		return nil, fmt.Errorf("Gemma returned status %d", resp.StatusCode)
 	}
 
@@ -214,11 +247,14 @@ func (s *GemmaService) analyzeWithGoogle(ctx context.Context, imagePath string) 
 		return nil, fmt.Errorf("Gemma response missing candidates")
 	}
 
-	validated, err := ParseGemmaResponse(parsed.Candidates[0].Content.Parts[0].Text)
+	reply := parsed.Candidates[0].Content.Parts[0].Text
+	log.Printf("[gemma] model reply: %s", reply)
+	validated, err := ParseGemmaResponse(reply)
 	if err != nil {
-		log.Printf("[gemma] invalid model payload: %v payload=%s", err, parsed.Candidates[0].Content.Parts[0].Text)
+		log.Printf("[gemma] parse failed: %v", err)
 		return nil, err
 	}
+	log.Printf("[gemma] parsed OK: title=%s series=%s", validated.Title, validated.SeriesArtist)
 	return validated, nil
 }
 
@@ -312,9 +348,106 @@ func (s *GemmaService) analyzeWithOpenRouter(ctx context.Context, imagePath stri
 		return nil, fmt.Errorf("OpenRouter response missing choices")
 	}
 
-	validated, err := ParseGemmaResponse(parsed.Choices[0].Message.Content)
+	reply := parsed.Choices[0].Message.Content
+	log.Printf("[gemma/openrouter] model reply: %s", reply)
+	validated, err := ParseGemmaResponse(reply)
 	if err != nil {
-		log.Printf("[gemma/openrouter] invalid model payload: %v payload=%s", err, parsed.Choices[0].Message.Content)
+		log.Printf("[gemma/openrouter] parse failed: %v", err)
+		return nil, err
+	}
+	log.Printf("[gemma/openrouter] parsed OK: title=%s series=%s", validated.Title, validated.SeriesArtist)
+	return validated, nil
+}
+
+func (s *GemmaService) analyzeWithLMStudio(ctx context.Context, imagePath string) (*GemmaResponse, error) {
+	apiURL := strings.TrimSpace(os.Getenv("LM_STUDIO_API_URL"))
+	if apiURL == "" {
+		apiURL = "http://localhost:1234/v1/chat/completions"
+	}
+	model := strings.TrimSpace(os.Getenv("LM_STUDIO_MODEL"))
+	if model == "" {
+		model = "google/gemma-4-e4b"
+	}
+
+	imageBytes, mimeType, err := loadImageBytes(imagePath)
+	if err != nil {
+		return nil, err
+	}
+	dataURL := "data:" + mimeType + ";base64," + base64.StdEncoding.EncodeToString(imageBytes)
+
+	payload := map[string]interface{}{
+		"model": model,
+		"messages": []interface{}{
+			map[string]string{"role": "system", "content": gemmaSystemPrompt},
+			map[string]interface{}{
+				"role": "user",
+				"content": []interface{}{
+					map[string]string{"type": "text", "text": "Identify this collectible image and return only the JSON object."},
+					map[string]interface{}{
+						"type":     "image_url",
+						"image_url": map[string]string{"url": dataURL},
+					},
+				},
+			},
+		},
+		"temperature": 0.2,
+		"max_tokens":  1024,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("marshal LM Studio request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("build LM Studio request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		log.Printf("[lmstudio] request failed: %v", err)
+		return nil, fmt.Errorf("LM Studio request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, fmt.Errorf("read LM Studio response: %w", err)
+	}
+	log.Printf("[lmstudio] response status=%d body=%s", resp.StatusCode, string(respBody))
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("LM Studio returned status %d", resp.StatusCode)
+	}
+
+	var parsed struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+		Error *struct {
+			Message string `json:"message"`
+		} `json:"error,omitempty"`
+	}
+	if err := json.Unmarshal(respBody, &parsed); err != nil {
+		log.Printf("[lmstudio] invalid response: %v body=%s", err, string(respBody))
+		return nil, fmt.Errorf("invalid LM Studio response: %w", err)
+	}
+	if len(parsed.Choices) == 0 {
+		if parsed.Error != nil {
+			return nil, fmt.Errorf("LM Studio error: %s", parsed.Error.Message)
+		}
+		return nil, fmt.Errorf("LM Studio response missing choices")
+	}
+
+	reply := parsed.Choices[0].Message.Content
+	log.Printf("[lmstudio] model reply: %s", reply)
+	validated, err := ParseGemmaResponse(reply)
+	if err != nil {
+		log.Printf("[lmstudio] parse failed: %v", err)
 		return nil, err
 	}
 	return validated, nil
@@ -333,7 +466,7 @@ func loadImageBytes(imagePath string) ([]byte, string, error) {
 }
 
 func AnalyzeCollectibleImage(imagePath string) (*GemmaResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	service := NewGemmaService(config.Load())
 	return service.AnalyzeCollectibleImage(ctx, imagePath)
@@ -343,6 +476,13 @@ func ParseGemmaResponse(raw string) (*GemmaResponse, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
 		return nil, fmt.Errorf("Gemma returned empty output")
+	}
+
+	// try to extract JSON from markdown code blocks
+	if idx := strings.Index(trimmed, "{"); idx >= 0 {
+		if end := strings.LastIndex(trimmed, "}"); end > idx {
+			trimmed = trimmed[idx : end+1]
+		}
 	}
 
 	var response GemmaResponse

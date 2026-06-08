@@ -1,10 +1,25 @@
 package models
 
 import (
+	"encoding/json"
 	"math/big"
 	"time"
 
 	"gorm.io/gorm"
+)
+
+const (
+	PhysicalCollectionStatusPendingAI    = "PENDING_AI"
+	PhysicalCollectionStatusStored       = "STORED"
+	PhysicalCollectionStatusFailed       = "FAILED"
+	PhysicalCollectionStatusAwaitingMint = "AWAITING_MINT"
+	PhysicalCollectionStatusMinted       = "MINTED"
+	PhysicalCollectionStatusShipped      = "SHIPPED"
+
+	PhysicalCollectionCardStatusPending    = "PENDING"
+	PhysicalCollectionCardStatusGenerating = "GENERATING"
+	PhysicalCollectionCardStatusCompleted  = "COMPLETED"
+	PhysicalCollectionCardStatusFailed     = "FAILED"
 )
 
 type User struct {
@@ -56,40 +71,18 @@ type Listing struct {
 }
 
 type Offer struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	NFTID       uint      `gorm:"index;not null" json:"nft_id"`
-	BidderID    uint      `gorm:"index;not null" json:"bidder_id"`
-	OfferID     uint64    `json:"offer_id"`
-	Price       string    `gorm:"size:78;not null" json:"price_wei"`
-	Expiration  time.Time `json:"expiration"`
-	Status      string    `gorm:"size:20;default:active" json:"status"`
-	TxHash      string    `gorm:"size:66" json:"tx_hash"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	NFT         NFT       `gorm:"foreignKey:NFTID" json:"nft,omitempty"`
-	Bidder      User      `gorm:"foreignKey:BidderID" json:"bidder,omitempty"`
-}
-
-type Auction struct {
-	ID             uint      `gorm:"primaryKey" json:"id"`
-	AuctionID      uint64    `gorm:"uniqueIndex;not null" json:"auction_id"`
-	NFTID          uint      `gorm:"index;not null" json:"nft_id"`
-	SellerID       uint      `gorm:"index;not null" json:"seller_id"`
-	StartPrice     string    `gorm:"size:78;not null" json:"start_price_wei"`
-	ReservePrice   string    `gorm:"size:78;not null" json:"reserve_price_wei"`
-	HighestBid     string    `gorm:"size:78;default:0" json:"highest_bid_wei"`
-	HighestBidderID *uint    `json:"highest_bidder_id"`
-	StartTime      time.Time `json:"start_time"`
-	EndTime        time.Time `json:"end_time"`
-	Status         string    `gorm:"size:20;default:pending" json:"status"`
-	WinnerID       *uint     `json:"winner_id"`
-	FinalPrice     string    `gorm:"size:78" json:"final_price_wei"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	NFT            NFT       `gorm:"foreignKey:NFTID" json:"nft,omitempty"`
-	Seller         User      `gorm:"foreignKey:SellerID" json:"seller,omitempty"`
-	HighestBidder  *User     `gorm:"foreignKey:HighestBidderID" json:"highest_bidder,omitempty"`
-	Winner         *User     `gorm:"foreignKey:WinnerID" json:"winner,omitempty"`
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	NFTID      uint      `gorm:"index;not null" json:"nft_id"`
+	BidderID   uint      `gorm:"index;not null" json:"bidder_id"`
+	OfferID    uint64    `json:"offer_id"`
+	Price      string    `gorm:"size:78;not null" json:"price_wei"`
+	Expiration time.Time `json:"expiration"`
+	Status     string    `gorm:"size:20;default:active" json:"status"`
+	TxHash     string    `gorm:"size:66" json:"tx_hash"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	NFT        NFT       `gorm:"foreignKey:NFTID" json:"nft,omitempty"`
+	Bidder     User      `gorm:"foreignKey:BidderID" json:"bidder,omitempty"`
 }
 
 type Transaction struct {
@@ -118,6 +111,29 @@ type NFTMetadata struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	User        User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+type PhysicalCollection struct {
+	ID                   uint            `gorm:"primaryKey" json:"id"`
+	UserID               uint            `gorm:"index;not null" json:"user_id"`
+	Name                 string          `gorm:"size:200" json:"name"`
+	MetadataID           *uint           `gorm:"index" json:"metadata_id,omitempty"`
+	NFTID                *uint           `gorm:"index" json:"nft_id,omitempty"`
+	RawImageURL          string          `gorm:"size:2000;not null" json:"raw_image_url"`
+	AIGCBackgroundURL    string          `gorm:"size:2000" json:"aigc_background_url"`
+	VirtualCardURL       string          `gorm:"size:2000" json:"virtual_card_url"`
+	TokenURI             string          `gorm:"size:2000;index" json:"token_uri"`
+	Attributes           json.RawMessage `gorm:"type:jsonb" json:"attributes"`
+	Status               string          `gorm:"size:20;index;not null" json:"status"`
+	CardGenerationStatus string          `gorm:"size:20;index;not null" json:"card_generation_status"`
+	RoyaltyFee           uint64          `json:"royalty_fee"`
+	PhysicalLocation     string          `gorm:"size:255" json:"physical_location"`
+	CreatedAt            time.Time       `json:"created_at"`
+	UpdatedAt            time.Time       `json:"updated_at"`
+	DeletedAt            gorm.DeletedAt  `gorm:"index" json:"-"`
+	User                 User            `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Metadata             *NFTMetadata    `gorm:"foreignKey:MetadataID" json:"metadata,omitempty"`
+	NFT                  *NFT            `gorm:"foreignKey:NFTID" json:"nft,omitempty"`
 }
 
 type Activity struct {

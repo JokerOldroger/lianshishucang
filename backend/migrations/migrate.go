@@ -9,10 +9,11 @@ func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&models.User{},
 		&models.NFTMetadata{},
+		&models.PhysicalCollection{},
+
 		&models.NFT{},
 		&models.Listing{},
 		&models.Offer{},
-		&models.Auction{},
 		&models.Transaction{},
 		&models.Activity{},
 	)

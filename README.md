@@ -12,10 +12,48 @@ A simple NFT marketplace project with three parts:
 .
 ├── backend/      # Go API server
 ├── contracts/    # Solidity smart contracts
+├── frontend/     # Vite + React inventory demo UI
 ├── scripts/      # Hardhat deployment scripts
-├── package.json  # Hardhat tasks and dependencies
+├── package.json  # Hardhat tasks and root helper scripts
 └── hardhat.config.cjs
 ```
+
+## Frontend Inventory Demo
+
+The inventory UI lives in `frontend/` and runs as a standalone Vite app.
+
+### Install frontend dependencies
+
+```bash
+npm --prefix ./frontend install
+```
+
+### Start the frontend demo
+
+```bash
+npm run dev:frontend
+```
+
+Or directly:
+
+```bash
+npm --prefix ./frontend run dev
+```
+
+### Optional frontend environment
+
+The frontend inventory client reads `VITE_API_BASE_URL` and defaults to `http://localhost:8080`.
+
+Example:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8080 npm --prefix ./frontend run dev
+```
+
+### Demo vs live mode
+
+- Without a JWT token, the page runs in demo mode with mock inventory data.
+- Paste a valid backend JWT into the UI to load real collections from `/api/v1/collections` and enable live collection actions.
 
 ## Smart Contracts
 
